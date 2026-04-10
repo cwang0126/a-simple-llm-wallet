@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Copy, Check, Download } from "lucide-react";
 import type { Provider } from "../types";
+import { getGroup } from "../types";
 import styles from "./ExportView.module.css";
 
 interface Props {
@@ -13,6 +14,7 @@ type Mode = "prefixed" | "generic";
 export function ExportView({ provider, onBack }: Props) {
   const [mode, setMode] = useState<Mode>("prefixed");
   const [copied, setCopied] = useState(false);
+  const group = getGroup(provider);
 
   const content = mode === "prefixed" ? generatePrefixed(provider) : generateGeneric(provider);
 
@@ -27,7 +29,7 @@ export function ExportView({ provider, onBack }: Props) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `.env.${provider.name.toLowerCase().replace(/\s+/g, "-")}`;
+    a.download = `.env.${group.toLowerCase().replace(/\s+/g, "-")}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -39,7 +41,7 @@ export function ExportView({ provider, onBack }: Props) {
           <ArrowLeft size={16} />
         </button>
         <div className={styles.headerInfo}>
-          <span className={styles.headerName}>Export — {provider.name}</span>
+          <span className={styles.headerName}>Export — {group} / {provider.modelName}</span>
           <span className={styles.headerSub}>Generate .env variables</span>
         </div>
       </div>
@@ -50,7 +52,7 @@ export function ExportView({ provider, onBack }: Props) {
             className={`${styles.modeBtn} ${mode === "prefixed" ? styles.active : ""}`}
             onClick={() => setMode("prefixed")}
           >
-            Prefixed ({provider.name.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_*)
+            Prefixed ({group.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_*)
           </button>
           <button
             className={`${styles.modeBtn} ${mode === "generic" ? styles.active : ""}`}
@@ -83,9 +85,10 @@ export function ExportView({ provider, onBack }: Props) {
 }
 
 function generatePrefixed(p: Provider): string {
-  const prefix = p.name.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const group = getGroup(p);
+  const prefix = group.toUpperCase().replace(/[^A-Z0-9]/g, "_");
   const lines = [
-    `# LLM Wallet export — ${p.name}`,
+    `# LLM Wallet export — ${group} / ${p.modelName}`,
     `# Generated at ${new Date().toISOString()}`,
     ``,
     `${prefix}_BASE_URL=${p.baseUrl}`,
@@ -98,8 +101,9 @@ function generatePrefixed(p: Provider): string {
 }
 
 function generateGeneric(p: Provider): string {
+  const group = getGroup(p);
   const lines = [
-    `# LLM Wallet export — ${p.name} (generic)`,
+    `# LLM Wallet export — ${group} / ${p.modelName} (generic)`,
     `# Generated at ${new Date().toISOString()}`,
     ``,
     `OPENAI_BASE_URL=${p.baseUrl}`,

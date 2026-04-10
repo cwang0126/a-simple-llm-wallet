@@ -1,11 +1,16 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, Runtime,
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Provider {
     pub id: String,
-    pub name: String,
     #[serde(rename = "providerGroup", skip_serializing_if = "Option::is_none")]
     pub provider_group: Option<String>,
     #[serde(rename = "baseUrl")]
@@ -101,6 +106,30 @@ fn delete_provider(id: String) -> Result<(), String> {
     save_wallet(&data)
 }
 
+#[tauri::command]
+fn get_wallet_path() -> String {
+    wallet_path().to_string_lossy().to_string()
+}
+
+#[tauri::command]
+fn open_wallet_file() -> Result<(), String> {
+    let path = wallet_path();
+    // Ensure the file exists before trying to open it
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        fs::write(&path, r#"{"version":"1.0.0","providers":[]}"#)
+            .map_err(|e| e.to_string())?;
+    }
+    // macOS: open with default app (TextEdit / VS Code / etc.)
+    Command::new("open")
+        .arg(path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -110,7 +139,51 @@ pub fn run() {
             add_provider,
             update_provider,
             delete_provider,
+            get_wallet_path,
+            open_wallet_file,
         ])
+        .setup(|app| {
+            setup_tray(app)?;
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn setup_tray<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
+    let show = MenuItem::with_id(app, "show", "Show LLM Wallet", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show, &quit])?;
+
+    TrayIconBuilder::new()
+        .icon(app.default_window_icon().unwrap().clone())
+        .menu(&menu)
+        .tooltip("LLM Wallet")
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => {
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                }
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let app = tray.app_handle();
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                }
+            }
+        })
+        .build(app)?;
+
+    Ok(())
 }

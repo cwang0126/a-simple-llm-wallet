@@ -81,3 +81,25 @@
 .deleteBtn:hover {
   background: var(--color-danger-hover);
 }
+
+.confirmInput {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.confirmInput:focus {
+  border-color: var(--color-danger);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

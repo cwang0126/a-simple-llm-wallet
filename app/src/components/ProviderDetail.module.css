@@ -36,12 +36,31 @@
   color: var(--text-muted);
 }
 
+.modelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .modelLabel {
   font-size: 18px;
   font-weight: 600;
   color: var(--color-accent);
   font-family: "SF Mono", "Fira Code", monospace;
 }
+
+/* #5: copy model button — visible on hover */
+.copyModelBtn {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.breadcrumb:hover .copyModelBtn { opacity: 1; }
+.copyModelBtn:hover { color: var(--color-accent); }
 
 .entryLabel {
   font-size: 12px;
@@ -54,6 +73,8 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .actionBtn {
@@ -69,17 +90,35 @@
   border: 1px solid var(--border-default);
   transition: all 0.15s;
 }
-
 .actionBtn:hover {
   color: var(--color-accent);
   border-color: var(--color-accent-border);
   background: var(--color-accent-muted);
 }
-
 .actionBtn.danger:hover {
   color: var(--color-danger);
   border-color: var(--color-danger);
-  background: rgba(242, 109, 109, 0.1);
+  background: rgba(242,109,109,0.1);
+}
+
+/* Test button */
+.testBtn { gap: 6px; }
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.statusDot.idle    { background: var(--border-default); }
+.statusDot.testing { background: var(--color-warning); animation: pulse 0.8s infinite; }
+.statusDot.ok      { background: var(--color-success); }
+.statusDot.fail    { background: var(--color-danger); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 .grid {
@@ -120,11 +159,7 @@
   align-items: center;
   gap: 8px;
 }
-
-.keyRow .fieldValue {
-  flex: 1;
-  min-width: 0;
-}
+.keyRow .fieldValue { flex: 1; min-width: 0; }
 
 .iconBtn {
   color: var(--text-muted);
@@ -135,10 +170,7 @@
   flex-shrink: 0;
   transition: color 0.15s;
 }
-
-.iconBtn:hover {
-  color: var(--color-accent);
-}
+.iconBtn:hover { color: var(--color-accent); }
 
 .tags {
   display: flex;
@@ -156,6 +188,6 @@
   border: 1px solid var(--color-accent-border);
 }
 
-.expired { color: var(--color-danger); }
-.expiredSoon { color: var(--color-danger); }
+.expired      { color: var(--color-danger); }
+.expiredSoon  { color: var(--color-danger); }
 .expiringSoon { color: var(--color-warning); }

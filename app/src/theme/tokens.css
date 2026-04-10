@@ -1,11 +1,11 @@
-/* ── Kiro-inspired Design Tokens ─────────────────────────────────────────── */
+/* ── Design Tokens ───────────────────────────────────────────────────────── */
 
 :root {
-  /* Brand / Accent — Kiro cyan-teal */
-  --color-accent:         #00d4d4;
-  --color-accent-hover:   #00bfbf;
-  --color-accent-muted:   rgba(0, 212, 212, 0.15);
-  --color-accent-border:  rgba(0, 212, 212, 0.35);
+  /* Brand / Accent — Purple */
+  --color-accent:         #6A3BC5;
+  --color-accent-hover:   #5a2fb0;
+  --color-accent-muted:   rgba(106, 59, 197, 0.12);
+  --color-accent-border:  rgba(106, 59, 197, 0.35);
 
   /* Status */
   --color-success:        #3dd68c;
@@ -23,7 +23,7 @@
   --bg-surface-raised:    #f9fafb;
   --bg-input:             #f4f5f7;
   --bg-hover:             #eef0f3;
-  --bg-selected:          rgba(0, 212, 212, 0.1);
+  --bg-selected:          rgba(106, 59, 197, 0.1);
 
   --border-default:       #e2e5ea;
   --border-subtle:        #eef0f3;
@@ -32,31 +32,31 @@
   --text-primary:         #111827;
   --text-secondary:       #4b5563;
   --text-muted:           #9ca3af;
-  --text-on-accent:       #003333;
+  --text-on-accent:       #ffffff;
 
   --shadow-sm:            0 1px 3px rgba(0,0,0,0.08);
   --shadow-md:            0 4px 12px rgba(0,0,0,0.10);
   --shadow-lg:            0 8px 24px rgba(0,0,0,0.12);
 }
 
-/* ── Dark Theme ──────────────────────────────────────────────────────────── */
+/* ── Dark Theme — warm dark grey, Kiro-inspired ──────────────────────────── */
 [data-theme="dark"] {
-  --bg-app:               #0f1117;
-  --bg-sidebar:           #161b27;
-  --bg-surface:           #1a2035;
-  --bg-surface-raised:    #1f2640;
-  --bg-input:             #161b27;
-  --bg-hover:             #1f2640;
-  --bg-selected:          rgba(0, 212, 212, 0.12);
+  --bg-app:               #201D25;
+  --bg-sidebar:           #27242D;
+  --bg-surface:           #2E2A38;
+  --bg-surface-raised:    #342F40;
+  --bg-input:             #27242D;
+  --bg-hover:             #342F40;
+  --bg-selected:          rgba(106, 59, 197, 0.18);
 
-  --border-default:       #2a3350;
-  --border-subtle:        #1f2640;
+  --border-default:       #3D3848;
+  --border-subtle:        #2E2A38;
   --border-focus:         var(--color-accent);
 
-  --text-primary:         #e8eaf0;
-  --text-secondary:       #8b95b0;
-  --text-muted:           #4a5568;
-  --text-on-accent:       #003333;
+  --text-primary:         #EAE6F0;
+  --text-secondary:       #B8B2C8;
+  --text-muted:           #7D7690;
+  --text-on-accent:       #ffffff;
 
   --shadow-sm:            0 1px 3px rgba(0,0,0,0.4);
   --shadow-md:            0 4px 12px rgba(0,0,0,0.5);

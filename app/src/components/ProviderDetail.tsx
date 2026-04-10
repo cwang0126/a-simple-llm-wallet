@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Edit2, Trash2, MessageSquare, Download, Eye, EyeOff, Copy, Check } from "lucide-react";
+import {
+  Edit2, Trash2, MessageSquare, Download, Eye, EyeOff,
+  Copy, Check, Zap, Files,
+} from "lucide-react";
 import type { Provider } from "../types";
 import { getGroup, daysUntilExpiry } from "../types";
 import styles from "./ProviderDetail.module.css";
@@ -10,7 +13,10 @@ interface Props {
   onDelete: () => void;
   onChat: () => void;
   onExport: () => void;
+  onDuplicate: () => void;
 }
+
+type TestStatus = "idle" | "testing" | "ok" | "fail";
 
 function ExpiryValue({ provider }: { provider: Provider }) {
   const days = daysUntilExpiry(provider);
@@ -23,16 +29,53 @@ function ExpiryValue({ provider }: { provider: Provider }) {
   return <span>{date} ({days}d left)</span>;
 }
 
-export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }: Props) {
+export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, onDuplicate }: Props) {
   const [showKey, setShowKey] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedModel, setCopiedModel] = useState(false);
+  const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
   const maskedKey = "••••••••" + provider.apiKey.slice(-4);
 
   const copyKey = async () => {
     await navigator.clipboard.writeText(provider.apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 1500);
+  };
+
+  const copyUrl = async () => {
+    await navigator.clipboard.writeText(provider.baseUrl);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 1500);
+  };
+
+  const copyModel = async () => {
+    await navigator.clipboard.writeText(provider.modelName);
+    setCopiedModel(true);
+    setTimeout(() => setCopiedModel(false), 1500);
+  };
+
+  const runTest = async () => {
+    setTestStatus("testing");
+    try {
+      const res = await fetch(`${provider.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${provider.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: provider.modelName,
+          messages: [{ role: "user", content: "Hello" }],
+          max_tokens: 10,
+        }),
+      });
+      setTestStatus(res.ok ? "ok" : "fail");
+    } catch {
+      setTestStatus("fail");
+    }
+    setTimeout(() => setTestStatus("idle"), 5000);
   };
 
   return (
@@ -42,16 +85,36 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }:
           <div className={styles.breadcrumb}>
             <span className={styles.groupLabel}>{getGroup(provider)}</span>
             <span className={styles.breadcrumbSep}>/</span>
-            <span className={styles.modelLabel}>{provider.modelName}</span>
+            <div className={styles.modelRow}>
+              <span className={styles.modelLabel}>{provider.modelName}</span>
+              <button className={styles.copyModelBtn} onClick={copyModel} title="Copy model name">
+                {copiedModel ? <Check size={12} /> : <Copy size={12} />}
+              </button>
+            </div>
           </div>
-          <span className={styles.entryLabel}>{provider.name !== provider.modelName ? provider.name : ""}</span>
         </div>
+
         <div className={styles.actions}>
+          {/* #7: Test button with status light */}
+          <button
+            className={`${styles.actionBtn} ${styles.testBtn}`}
+            onClick={runTest}
+            disabled={testStatus === "testing"}
+            title="Quick test"
+          >
+            <span className={`${styles.statusDot} ${styles[testStatus]}`} />
+            <Zap size={14} />
+            {testStatus === "testing" ? "Testing…" : "Test"}
+          </button>
+
           <button className={styles.actionBtn} onClick={onChat}>
             <MessageSquare size={15} /> Chat
           </button>
           <button className={styles.actionBtn} onClick={onExport}>
             <Download size={15} /> Export
+          </button>
+          <button className={styles.actionBtn} onClick={onDuplicate} title="Duplicate">
+            <Files size={15} />
           </button>
           <button className={styles.actionBtn} onClick={onEdit}>
             <Edit2 size={15} /> Edit
@@ -63,7 +126,18 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }:
       </div>
 
       <div className={styles.grid}>
-        <Field label="Base URL" value={provider.baseUrl} mono />
+        {/* Base URL with copy (#11) */}
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Base URL</div>
+          <div className={styles.keyRow}>
+            <span className={`${styles.fieldValue} ${styles.mono}`}>{provider.baseUrl}</span>
+            <button className={styles.iconBtn} onClick={copyUrl} title="Copy URL">
+              {copiedUrl ? <Check size={13} style={{ color: "var(--color-success)" }} /> : <Copy size={13} />}
+            </button>
+          </div>
+        </div>
+
+        {/* API Key */}
         <div className={styles.field}>
           <div className={styles.fieldLabel}>API Key</div>
           <div className={styles.keyRow}>
@@ -74,15 +148,18 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }:
               {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
             </button>
             <button className={styles.iconBtn} onClick={copyKey}>
-              {copied ? <Check size={13} style={{ color: "var(--color-success)" }} /> : <Copy size={13} />}
+              {copiedKey ? <Check size={13} style={{ color: "var(--color-success)" }} /> : <Copy size={13} />}
             </button>
           </div>
         </div>
+
         <Field label="Context Window" value={provider.contextWindow ? `${provider.contextWindow.toLocaleString()} tokens` : "—"} />
+
         <div className={styles.field}>
           <div className={styles.fieldLabel}>Expiry</div>
           <div className={styles.fieldValue}><ExpiryValue provider={provider} /></div>
         </div>
+
         <div className={styles.field}>
           <div className={styles.fieldLabel}>Modalities</div>
           <div className={styles.tags}>
@@ -91,6 +168,7 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }:
             ))}
           </div>
         </div>
+
         {provider.notes && <Field label="Notes" value={provider.notes} />}
         <Field label="Created" value={new Date(provider.createdAt).toLocaleString()} />
         <Field label="Updated" value={new Date(provider.updatedAt).toLocaleString()} />

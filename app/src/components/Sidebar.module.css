@@ -7,6 +7,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  position: relative;
 }
 
 .header {
@@ -17,11 +18,15 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.logo {
+.logoBtn {
   display: flex;
   align-items: center;
   gap: 8px;
+  border-radius: 6px;
+  padding: 3px 4px;
+  transition: background 0.15s;
 }
+.logoBtn:hover { background: var(--bg-hover); }
 
 .logoIcon { color: var(--color-accent); }
 
@@ -40,11 +45,7 @@
   display: flex;
   align-items: center;
 }
-
-.themeBtn:hover {
-  color: var(--color-accent);
-  background: var(--bg-hover);
-}
+.themeBtn:hover { color: var(--color-accent); background: var(--bg-hover); }
 
 .section {
   padding: 14px 14px 6px;
@@ -71,7 +72,6 @@
   border-radius: 6px;
   transition: background 0.15s;
 }
-
 .addBtn:hover { background: var(--color-accent-muted); }
 
 .nav {
@@ -87,23 +87,37 @@
   padding: 24px 0;
 }
 
-.group { margin-bottom: 4px; }
+.group {
+  margin-bottom: 4px;
+  border-radius: 6px;
+}
+
+/* Group header row — name on left, reorder buttons on right */
+.groupRow {
+  display: flex;
+  align-items: center;
+}
 
 .groupHeader {
-  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 8px;
+  padding: 5px 6px;
   border-radius: 6px;
   text-align: left;
   color: var(--text-muted);
   transition: background 0.15s;
+  min-width: 0;
 }
+.groupHeader:hover { background: var(--bg-hover); color: var(--text-secondary); }
 
-.groupHeader:hover {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
+.groupHeaderPlaceholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 5px 6px;
+  min-width: 0;
 }
 
 .groupName {
@@ -111,6 +125,9 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .groupCount {
@@ -119,6 +136,40 @@
   color: var(--text-muted);
   padding: 1px 5px;
   border-radius: 10px;
+  flex-shrink: 0;
+}
+
+/* ▲ ▼ reorder buttons — appear on group row hover, sit on the right */
+.reorderBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+.groupRow:hover .reorderBtns { opacity: 1; }
+
+.reorderBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 13px;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--text-muted);
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+.reorderBtn:hover:not(:disabled) {
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
+.reorderBtn:disabled {
+  opacity: 0.2;
+  cursor: default;
 }
 
 .navItem {
@@ -132,13 +183,9 @@
   transition: background 0.15s;
   margin-bottom: 1px;
 }
-
 .navItem.indented { padding-left: 20px; }
-
 .navItem:hover { background: var(--bg-hover); }
-
 .navItem.active { background: var(--bg-selected); }
-
 .navItem.active .providerName { color: var(--color-accent); }
 
 .providerDot {
@@ -149,7 +196,6 @@
   flex-shrink: 0;
   opacity: 0.6;
 }
-
 .navItem.active .providerDot { opacity: 1; }
 
 .providerInfo {
@@ -178,7 +224,6 @@
   font-family: "SF Mono", "Fira Code", monospace;
 }
 
-/* Expiry badges */
 .badge {
   font-size: 10px;
   font-weight: 600;
@@ -186,28 +231,80 @@
   border-radius: 4px;
   flex-shrink: 0;
 }
+.badge.expired { background: rgba(242,109,109,0.15); color: var(--color-danger); }
+.badge.warn    { background: rgba(245,166,35,0.15);  color: var(--color-warning); }
+.badge.soon    { background: rgba(245,166,35,0.1);   color: var(--color-warning); }
 
-.badge.expired {
-  background: rgba(242, 109, 109, 0.15);
-  color: var(--color-danger);
-}
-
-.badge.warn {
-  background: rgba(245, 166, 35, 0.15);
-  color: var(--color-warning);
-}
-
-.badge.soon {
-  background: rgba(245, 166, 35, 0.1);
-  color: var(--color-warning);
-}
-
+/* Footer */
 .footer {
   padding: 10px 14px;
   border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .footerText {
   font-size: 11px;
   color: var(--text-muted);
 }
+
+/* Icon-only settings button */
+.settingsBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+.settingsBtn:hover { color: var(--color-accent); background: var(--color-accent-muted); }
+
+/* Settings panel */
+.settingsPanel {
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-default);
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+}
+
+.settingsPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settingsClose {
+  color: var(--text-muted);
+  display: flex;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.settingsClose:hover { color: var(--text-primary); }
+
+.settingsItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: background 0.15s;
+}
+.settingsItem:hover { background: var(--bg-hover); color: var(--text-primary); }

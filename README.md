@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-brightgreen)](https://github.com/cwang0126/a-simple-llm-wallet/releases)
 
-A local-first CLI wallet for managing LLM inference provider credentials. Store API keys, model names, and endpoint URLs from any provider in one place — all on your machine, zero cloud sync, zero leakage risk.
+A local-first CLI & App wallet for managing LLM inference provider credentials. Store API keys, model names, and endpoint URLs from any provider in one place — all on your machine, zero cloud sync, zero leakage risk.
 
 ---
 
@@ -214,7 +214,7 @@ A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. F
 
 ```bash
 cd app
-./install-desktop.sh
+./install-app.sh
 ```
 
 ### Run in development

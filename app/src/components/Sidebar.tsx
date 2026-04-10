@@ -1,5 +1,9 @@
-import { Sun, Moon, Plus, Wallet, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Sun, Moon, Plus, Wallet, ChevronDown, ChevronRight,
+  FolderOpen, Settings, X,
+} from "lucide-react";
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import type { Provider, Theme, ViewMode } from "../types";
 import { getGroup, daysUntilExpiry } from "../types";
 import styles from "./Sidebar.module.css";
@@ -9,9 +13,12 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onHome: () => void;
   theme: Theme;
   onToggleTheme: () => void;
   activeView: ViewMode;
+  groupOrder: string[];
+  onGroupOrderChange: (order: string[]) => void;
 }
 
 function ExpiryBadge({ provider }: { provider: Provider }) {
@@ -23,8 +30,10 @@ function ExpiryBadge({ provider }: { provider: Provider }) {
   return null;
 }
 
-export function Sidebar({ providers, selectedId, onSelect, onAdd, theme, onToggleTheme }: Props) {
-  // Group providers by providerGroup
+export function Sidebar({
+  providers, selectedId, onSelect, onAdd, onHome,
+  theme, onToggleTheme, groupOrder, onGroupOrderChange,
+}: Props) {
   const groups = providers.reduce<Record<string, Provider[]>>((acc, p) => {
     const g = getGroup(p);
     if (!acc[g]) acc[g] = [];
@@ -32,19 +41,28 @@ export function Sidebar({ providers, selectedId, onSelect, onAdd, theme, onToggl
     return acc;
   }, {});
 
-  const groupNames = Object.keys(groups).sort();
-
-  // Collapsed state per group — default all expanded
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const toggle = (g: string) => setCollapsed((prev) => ({ ...prev, [g]: !prev[g] }));
+  const toggleCollapse = (g: string) =>
+    setCollapsed((prev) => ({ ...prev, [g]: !prev[g] }));
+
+  const moveGroup = (name: string, dir: -1 | 1) => {
+    const list = [...groupOrder];
+    const idx = list.indexOf(name);
+    const next = idx + dir;
+    if (next < 0 || next >= list.length) return;
+    [list[idx], list[next]] = [list[next], list[idx]];
+    onGroupOrderChange(list);
+  };
+
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <aside className={styles.sidebar}>
       <div className={styles.header}>
-        <div className={styles.logo}>
+        <button className={styles.logoBtn} onClick={onHome} title="Home">
           <Wallet size={18} className={styles.logoIcon} />
           <span className={styles.logoText}>LLM Wallet</span>
-        </div>
+        </button>
         <button className={styles.themeBtn} onClick={onToggleTheme} title="Toggle theme">
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
@@ -53,50 +71,74 @@ export function Sidebar({ providers, selectedId, onSelect, onAdd, theme, onToggl
       <div className={styles.section}>
         <div className={styles.sectionLabel}>Providers</div>
         <button className={styles.addBtn} onClick={onAdd}>
-          <Plus size={14} />
-          Add
+          <Plus size={14} /> Add
         </button>
       </div>
 
       <nav className={styles.nav}>
-        {groupNames.length === 0 ? (
+        {groupOrder.length === 0 ? (
           <div className={styles.empty}>No providers yet</div>
         ) : (
-          groupNames.map((groupName) => {
+          groupOrder.map((groupName, idx) => {
             const models = groups[groupName];
+            if (!models) return null;
             const isCollapsed = collapsed[groupName] ?? false;
             const isSingle = models.length === 1;
 
             return (
               <div key={groupName} className={styles.group}>
-                {/* Group header — only shown when multiple models */}
-                {!isSingle && (
-                  <button className={styles.groupHeader} onClick={() => toggle(groupName)}>
-                    {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                    <span className={styles.groupName}>{groupName}</span>
-                    <span className={styles.groupCount}>{models.length}</span>
-                  </button>
-                )}
-
-                {/* Model entries */}
-                {(!isCollapsed || isSingle) && models.map((p) => (
-                  <button
-                    key={p.id}
-                    className={`${styles.navItem} ${selectedId === p.id ? styles.active : ""} ${!isSingle ? styles.indented : ""}`}
-                    onClick={() => onSelect(p.id)}
-                  >
-                    <div className={styles.providerDot} />
-                    <div className={styles.providerInfo}>
-                      <span className={styles.providerName}>
-                        {isSingle ? groupName : p.modelName}
-                      </span>
-                      <span className={styles.providerModel}>
-                        {isSingle ? p.modelName : p.name}
-                      </span>
+                <div className={styles.groupRow}>
+                  {/* Left: collapse toggle or plain name */}
+                  {!isSingle ? (
+                    <button
+                      className={styles.groupHeader}
+                      onClick={() => toggleCollapse(groupName)}
+                    >
+                      {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                      <span className={styles.groupName}>{groupName}</span>
+                      <span className={styles.groupCount}>{models.length}</span>
+                    </button>
+                  ) : (
+                    <div className={styles.groupHeaderPlaceholder}>
+                      <span className={styles.groupName}>{groupName}</span>
                     </div>
-                    <ExpiryBadge provider={p} />
-                  </button>
-                ))}
+                  )}
+
+                  {/* Right: ▲ ▼ reorder buttons, appear on hover */}
+                  <div className={styles.reorderBtns}>
+                    <button
+                      className={styles.reorderBtn}
+                      onClick={() => moveGroup(groupName, -1)}
+                      disabled={idx === 0}
+                      title="Move up"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      className={styles.reorderBtn}
+                      onClick={() => moveGroup(groupName, 1)}
+                      disabled={idx === groupOrder.length - 1}
+                      title="Move down"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+
+                {(!isCollapsed || isSingle) &&
+                  models.map((p) => (
+                    <button
+                      key={p.id}
+                      className={`${styles.navItem} ${selectedId === p.id ? styles.active : ""} ${!isSingle ? styles.indented : ""}`}
+                      onClick={() => onSelect(p.id)}
+                    >
+                      <div className={styles.providerDot} />
+                      <div className={styles.providerInfo}>
+                        <span className={styles.providerName}>{p.modelName}</span>
+                      </div>
+                      <ExpiryBadge provider={p} />
+                    </button>
+                  ))}
               </div>
             );
           })
@@ -104,8 +146,35 @@ export function Sidebar({ providers, selectedId, onSelect, onAdd, theme, onToggl
       </nav>
 
       <div className={styles.footer}>
-        <span className={styles.footerText}>{providers.length} model{providers.length !== 1 ? "s" : ""}</span>
+        <span className={styles.footerText}>
+          {providers.length} model{providers.length !== 1 ? "s" : ""}
+        </span>
+        <button
+          className={styles.settingsBtn}
+          onClick={() => setShowSettings((v) => !v)}
+          title="Settings"
+        >
+          <Settings size={15} />
+        </button>
       </div>
+
+      {showSettings && (
+        <div className={styles.settingsPanel}>
+          <div className={styles.settingsPanelHeader}>
+            <span>Settings</span>
+            <button className={styles.settingsClose} onClick={() => setShowSettings(false)}>
+              <X size={14} />
+            </button>
+          </div>
+          <button
+            className={styles.settingsItem}
+            onClick={() => { invoke("open_wallet_file"); setShowSettings(false); }}
+          >
+            <FolderOpen size={13} />
+            Open wallet.json
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
