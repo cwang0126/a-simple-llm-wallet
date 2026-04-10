@@ -16,10 +16,10 @@ This guide walks through building a signed/unsigned `.dmg` for macOS and publish
 
 ## 1. Build the Release Bundle
 
-From the `desktop/` directory:
+From the `app/` directory:
 
 ```bash
-cd desktop
+cd app
 npm install
 npm run tauri build
 ```
@@ -27,7 +27,7 @@ npm run tauri build
 Tauri will compile the Rust backend in release mode and bundle the frontend. Output artifacts:
 
 ```
-desktop/src-tauri/target/release/bundle/
+app/src-tauri/target/release/bundle/
 ├── dmg/
 │   └── LLM Wallet_0.1.0_aarch64.dmg   ← the distributable
 └── macos/
@@ -45,7 +45,7 @@ Without signing, macOS will show a Gatekeeper warning on first launch. Users can
 ### Ad-hoc signing (free, no Apple Developer account)
 
 ```bash
-codesign --force --deep --sign - "desktop/src-tauri/target/release/bundle/macos/LLM Wallet.app"
+codesign --force --deep --sign - "app/src-tauri/target/release/bundle/macos/LLM Wallet.app"
 ```
 
 This suppresses some warnings but does not pass Gatekeeper notarization.
@@ -83,7 +83,7 @@ export APPLE_TEAM_ID="YOURTEAMID"
 ```bash
 # Install gh CLI if needed: brew install gh
 gh release create desktop-v0.1.0 \
-  "desktop/src-tauri/target/release/bundle/dmg/LLM Wallet_0.1.0_aarch64.dmg" \
+  "app/src-tauri/target/release/bundle/dmg/LLM Wallet_0.1.0_aarch64.dmg" \
   --title "Desktop v0.1.0" \
   --notes "Initial macOS desktop release. See release notes below."
 ```
@@ -131,6 +131,7 @@ By default, `tauri build` targets your current architecture. To build a universa
 rustup target add x86_64-apple-darwin
 
 # Build universal binary (runs on both Apple Silicon and Intel)
+cd app
 npm run tauri build -- --target universal-apple-darwin
 ```
 
@@ -170,16 +171,16 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: desktop
+        working-directory: app
 
       - name: Build Tauri app
         run: npm run tauri build -- --target universal-apple-darwin
-        working-directory: desktop
+        working-directory: app
 
       - name: Upload DMG to release
         uses: softprops/action-gh-release@v2
         with:
-          files: desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          files: app/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
 ```
 
 Push a tag to trigger it:
@@ -195,7 +196,7 @@ git push origin desktop-v0.1.0
 
 | Step | Command |
 |------|---------|
-| Build | `cd desktop && npm run tauri build` |
+| Build | `cd app && npm run tauri build` |
 | Ad-hoc sign | `codesign --force --deep --sign - "...LLM Wallet.app"` |
 | Create release (CLI) | `gh release create desktop-v0.1.0 *.dmg --title "Desktop v0.1.0"` |
-| Universal build | `npm run tauri build -- --target universal-apple-darwin` |
+| Universal build | `cd app && npm run tauri build -- --target universal-apple-darwin` |

@@ -213,25 +213,25 @@ A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. F
 ### Setup
 
 ```bash
-cd desktop
+cd app
 ./install-desktop.sh
 ```
 
 ### Run in development
 
 ```bash
-cd desktop
+cd app
 npm run tauri dev
 ```
 
 ### Build release .app
 
 ```bash
-cd desktop
+cd app
 npm run tauri build
 ```
 
-The `.app` bundle will be at `desktop/src-tauri/target/release/bundle/macos/`.
+The `.app` bundle will be at `app/src-tauri/target/release/bundle/macos/`.
 
 ---
 

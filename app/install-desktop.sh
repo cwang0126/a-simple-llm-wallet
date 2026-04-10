@@ -31,7 +31,7 @@ npm install
 
 echo ""
 echo "Done! To start the desktop app in development mode, run:"
-echo "  cd desktop && npm run tauri dev"
+echo "  cd app && npm run tauri dev"
 echo ""
 echo "To build a release .app bundle:"
-echo "  cd desktop && npm run tauri build"
+echo "  cd app && npm run tauri build"
