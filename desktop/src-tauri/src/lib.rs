@@ -6,16 +6,21 @@ use std::path::PathBuf;
 pub struct Provider {
     pub id: String,
     pub name: String,
+    #[serde(rename = "providerGroup", skip_serializing_if = "Option::is_none")]
+    pub provider_group: Option<String>,
     #[serde(rename = "baseUrl")]
     pub base_url: String,
     #[serde(rename = "apiKey")]
     pub api_key: String,
     #[serde(rename = "modelName")]
     pub model_name: String,
-    #[serde(rename = "contextWindow")]
+    #[serde(rename = "contextWindow", skip_serializing_if = "Option::is_none")]
     pub context_window: Option<u32>,
     pub modalities: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+    #[serde(rename = "expiresAt", skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]

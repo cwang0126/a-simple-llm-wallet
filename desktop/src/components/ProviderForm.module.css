@@ -184,3 +184,34 @@
 .saveBtn:hover {
   background: var(--color-accent-hover);
 }
+
+.expiryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.expiryRow .input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+  cursor: pointer;
+}
+
+.select:focus { border-color: var(--border-focus); }
+
+.orText {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}

@@ -1,6 +1,6 @@
 .sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: 230px;
+  min-width: 230px;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-default);
   display: flex;
@@ -23,9 +23,7 @@
   gap: 8px;
 }
 
-.logoIcon {
-  color: var(--color-accent);
-}
+.logoIcon { color: var(--color-accent); }
 
 .logoText {
   font-size: 14px;
@@ -74,9 +72,7 @@
   transition: background 0.15s;
 }
 
-.addBtn:hover {
-  background: var(--color-accent-muted);
-}
+.addBtn:hover { background: var(--color-accent-muted); }
 
 .nav {
   flex: 1;
@@ -91,48 +87,77 @@
   padding: 24px 0;
 }
 
+.group { margin-bottom: 4px; }
+
+.groupHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  text-align: left;
+  color: var(--text-muted);
+  transition: background 0.15s;
+}
+
+.groupHeader:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.groupName {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.groupCount {
+  font-size: 10px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+
 .navItem {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 8px;
+  gap: 8px;
+  padding: 7px 8px;
   border-radius: 8px;
   text-align: left;
   transition: background 0.15s;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
-.navItem:hover {
-  background: var(--bg-hover);
-}
+.navItem.indented { padding-left: 20px; }
 
-.navItem.active {
-  background: var(--bg-selected);
-}
+.navItem:hover { background: var(--bg-hover); }
 
-.navItem.active .providerName {
-  color: var(--color-accent);
-}
+.navItem.active { background: var(--bg-selected); }
+
+.navItem.active .providerName { color: var(--color-accent); }
 
 .providerDot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--color-accent);
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
-.navItem.active .providerDot {
-  opacity: 1;
-}
+.navItem.active .providerDot { opacity: 1; }
 
 .providerInfo {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
+  flex: 1;
 }
 
 .providerName {
@@ -150,6 +175,31 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+
+/* Expiry badges */
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.badge.expired {
+  background: rgba(242, 109, 109, 0.15);
+  color: var(--color-danger);
+}
+
+.badge.warn {
+  background: rgba(245, 166, 35, 0.15);
+  color: var(--color-warning);
+}
+
+.badge.soon {
+  background: rgba(245, 166, 35, 0.1);
+  color: var(--color-warning);
 }
 
 .footer {

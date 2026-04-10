@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Edit2, Trash2, MessageSquare, Download, Eye, EyeOff, Copy, Check } from "lucide-react";
 import type { Provider } from "../types";
+import { getGroup, daysUntilExpiry } from "../types";
 import styles from "./ProviderDetail.module.css";
 
 interface Props {
@@ -9,6 +10,17 @@ interface Props {
   onDelete: () => void;
   onChat: () => void;
   onExport: () => void;
+}
+
+function ExpiryValue({ provider }: { provider: Provider }) {
+  const days = daysUntilExpiry(provider);
+  if (days === null) return <span>—</span>;
+  const date = new Date(provider.expiresAt!).toLocaleDateString();
+  if (days < 0) return <span className={styles.expired}>{date} (expired {Math.abs(days)}d ago)</span>;
+  if (days === 0) return <span className={styles.expiredSoon}>{date} (expires today)</span>;
+  if (days <= 7) return <span className={styles.expiredSoon}>{date} ({days}d left)</span>;
+  if (days <= 30) return <span className={styles.expiringSoon}>{date} ({days}d left)</span>;
+  return <span>{date} ({days}d left)</span>;
 }
 
 export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }: Props) {
@@ -27,23 +39,24 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }:
     <div className={styles.container}>
       <div className={styles.topBar}>
         <div className={styles.titleBlock}>
-          <h1 className={styles.name}>{provider.name}</h1>
-          <span className={styles.model}>{provider.modelName}</span>
+          <div className={styles.breadcrumb}>
+            <span className={styles.groupLabel}>{getGroup(provider)}</span>
+            <span className={styles.breadcrumbSep}>/</span>
+            <span className={styles.modelLabel}>{provider.modelName}</span>
+          </div>
+          <span className={styles.entryLabel}>{provider.name !== provider.modelName ? provider.name : ""}</span>
         </div>
         <div className={styles.actions}>
-          <button className={styles.actionBtn} onClick={onChat} title="Chat">
-            <MessageSquare size={15} />
-            Chat
+          <button className={styles.actionBtn} onClick={onChat}>
+            <MessageSquare size={15} /> Chat
           </button>
-          <button className={styles.actionBtn} onClick={onExport} title="Export .env">
-            <Download size={15} />
-            Export
+          <button className={styles.actionBtn} onClick={onExport}>
+            <Download size={15} /> Export
           </button>
-          <button className={styles.actionBtn} onClick={onEdit} title="Edit">
-            <Edit2 size={15} />
-            Edit
+          <button className={styles.actionBtn} onClick={onEdit}>
+            <Edit2 size={15} /> Edit
           </button>
-          <button className={`${styles.actionBtn} ${styles.danger}`} onClick={onDelete} title="Delete">
+          <button className={`${styles.actionBtn} ${styles.danger}`} onClick={onDelete}>
             <Trash2 size={15} />
           </button>
         </div>
@@ -57,15 +70,19 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport }:
             <span className={`${styles.fieldValue} ${styles.mono}`}>
               {showKey ? provider.apiKey : maskedKey}
             </span>
-            <button className={styles.iconBtn} onClick={() => setShowKey((v) => !v)} title={showKey ? "Hide" : "Show"}>
+            <button className={styles.iconBtn} onClick={() => setShowKey((v) => !v)}>
               {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
             </button>
-            <button className={styles.iconBtn} onClick={copyKey} title="Copy">
+            <button className={styles.iconBtn} onClick={copyKey}>
               {copied ? <Check size={13} style={{ color: "var(--color-success)" }} /> : <Copy size={13} />}
             </button>
           </div>
         </div>
         <Field label="Context Window" value={provider.contextWindow ? `${provider.contextWindow.toLocaleString()} tokens` : "—"} />
+        <div className={styles.field}>
+          <div className={styles.fieldLabel}>Expiry</div>
+          <div className={styles.fieldValue}><ExpiryValue provider={provider} /></div>
+        </div>
         <div className={styles.field}>
           <div className={styles.fieldLabel}>Modalities</div>
           <div className={styles.tags}>

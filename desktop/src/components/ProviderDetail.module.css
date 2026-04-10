@@ -18,17 +18,35 @@
   gap: 4px;
 }
 
-.name {
-  font-size: 22px;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupLabel {
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
-.model {
-  font-size: 13px;
+.breadcrumbSep {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.modelLabel {
+  font-size: 18px;
+  font-weight: 600;
   color: var(--color-accent);
   font-family: "SF Mono", "Fira Code", monospace;
+}
+
+.entryLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 16px;
 }
 
 .actions {
@@ -137,3 +155,7 @@
   color: var(--color-accent);
   border: 1px solid var(--color-accent-border);
 }
+
+.expired { color: var(--color-danger); }
+.expiredSoon { color: var(--color-danger); }
+.expiringSoon { color: var(--color-warning); }
