@@ -1,0 +1,83 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  padding: 28px 28px 22px;
+  width: 340px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.icon {
+  color: var(--color-danger);
+  background: rgba(242, 109, 109, 0.1);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.cancelBtn, .deleteBtn {
+  flex: 1;
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.cancelBtn {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.cancelBtn:hover {
+  color: var(--text-primary);
+}
+
+.deleteBtn {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.deleteBtn:hover {
+  background: var(--color-danger-hover);
+}

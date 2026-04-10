@@ -1,0 +1,22 @@
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}

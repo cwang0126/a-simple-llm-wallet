@@ -1,0 +1,139 @@
+.container {
+  flex: 1;
+  padding: 28px 32px;
+  overflow-y: auto;
+}
+
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.model {
+  font-size: 13px;
+  color: var(--color-accent);
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  transition: all 0.15s;
+}
+
+.actionBtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-muted);
+}
+
+.actionBtn.danger:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: rgba(242, 109, 109, 0.1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.fieldValue {
+  font-size: 13px;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.mono {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 12px;
+}
+
+.keyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keyRow .fieldValue {
+  flex: 1;
+  min-width: 0;
+}
+
+.iconBtn {
+  color: var(--text-muted);
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.iconBtn:hover {
+  color: var(--color-accent);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
+}

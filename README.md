@@ -201,6 +201,40 @@ No telemetry, no analytics, no remote sync. Back up this file to preserve your c
 
 ---
 
+## Desktop App (macOS)
+
+A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. Final app bundle is ~8MB — no Electron, no bloat. Features the same Kiro-inspired design with full light/dark theme support.
+
+### Prerequisites
+
+- Node.js 18+
+- Rust (installed automatically by the setup script if missing)
+
+### Setup
+
+```bash
+cd desktop
+./install-desktop.sh
+```
+
+### Run in development
+
+```bash
+cd desktop
+npm run tauri dev
+```
+
+### Build release .app
+
+```bash
+cd desktop
+npm run tauri build
+```
+
+The `.app` bundle will be at `desktop/src-tauri/target/release/bundle/macos/`.
+
+---
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=cwang0126/a-simple-llm-wallet&type=Date)](https://star-history.com/#cwang0126/a-simple-llm-wallet&Date)

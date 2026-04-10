@@ -1,0 +1,47 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px;
+  text-align: center;
+}
+
+.icon {
+  color: var(--color-accent);
+  opacity: 0.4;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-on-accent);
+  background: var(--color-accent);
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: var(--color-accent-hover);
+}

@@ -210,3 +210,8 @@ __marimo__/
 node_modules/
 dist/
 *.env
+
+# Desktop (Tauri)
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/

@@ -1,0 +1,140 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.backBtn {
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  transition: color 0.15s, background 0.15s;
+}
+
+.backBtn:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.headerName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.headerSub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.body {
+  flex: 1;
+  padding: 28px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modeRow {
+  display: flex;
+  gap: 8px;
+}
+
+.modeBtn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  transition: all 0.15s;
+}
+
+.modeBtn:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+
+.modeBtn.active {
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.codeBlock {
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.codeActions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface-raised);
+}
+
+.codeBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  transition: all 0.15s;
+}
+
+.codeBtn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+.code {
+  padding: 16px;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.hint code {
+  font-family: "SF Mono", "Fira Code", monospace;
+  background: var(--bg-surface-raised);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--color-accent);
+}
