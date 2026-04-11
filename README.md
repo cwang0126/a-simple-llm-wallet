@@ -203,28 +203,48 @@ No telemetry, no analytics, no remote sync. Back up this file to preserve your c
 
 ## Desktop App (macOS)
 
-A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. Final app bundle is ~8MB — no Electron, no bloat. Features the same Kiro-inspired design with full light/dark theme support.
+A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. Final app bundle is ~8MB — no Electron, no bloat. Provide light/dark theme support.
 
-### Prerequisites
+### Install from Release (recommended)
+
+1. Go to [Releases](https://github.com/cwang0126/a-simple-llm-wallet/releases)
+2. Download `LLM.Wallet.x.x.x.dmg` from the Assets section
+3. Open the `.dmg` and drag **LLM Wallet.app** to your `/Applications` folder
+
+#### Fix app crashing on first launch (macOS Gatekeeper)
+
+Because the app is not notarized by Apple, macOS quarantines it and it will crash on first open. Run this once in Terminal to remove the quarantine flag:
+
+```bash
+sudo xattr -dr com.apple.quarantine /Applications/LLM\ Wallet.app
+```
+
+Then open the app normally from Launchpad or Finder.
+
+> This is a standard workaround for unsigned macOS apps distributed outside the App Store. The command only removes the quarantine attribute — it does not modify the app itself.
+
+### Build from source
+
+#### Prerequisites
 
 - Node.js 18+
 - Rust (installed automatically by the setup script if missing)
 
-### Setup
+#### Setup
 
 ```bash
 cd app
 ./install-app.sh
 ```
 
-### Run in development
+#### Run in development
 
 ```bash
 cd app
 npm run tauri dev
 ```
 
-### Build release .app
+#### Build release .app
 
 ```bash
 cd app
