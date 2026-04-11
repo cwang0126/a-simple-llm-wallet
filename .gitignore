@@ -218,3 +218,9 @@ references/
 
 # macOS
 .DS_Store
+
+# vscode
+*.vscode
+
+# wallet
+*wallet.json
