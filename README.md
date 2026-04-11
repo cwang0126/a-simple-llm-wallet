@@ -203,7 +203,7 @@ No telemetry, no analytics, no remote sync. Back up this file to preserve your c
 
 ## Desktop App (macOS)
 
-A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. Final app bundle is ~8MB — no Electron, no bloat. Features a Kiro-inspired design with full light/dark theme support.
+A native macOS desktop client built with [Tauri 2](https://tauri.app) + React. Final app bundle is ~8MB — no Electron, no bloat. Provide light/dark theme support.
 
 ### Install from Release (recommended)
 
