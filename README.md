@@ -257,7 +257,13 @@ The `.app` bundle will be at `app/src-tauri/target/release/bundle/macos/`.
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=cwang0126/a-simple-llm-wallet&type=Date)](https://star-history.com/#cwang0126/a-simple-llm-wallet&Date)
+<a href="https://www.star-history.com/?repos=cwang0126%2Fa-simple-llm-wallet&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=cwang0126/a-simple-llm-wallet&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=cwang0126/a-simple-llm-wallet&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=cwang0126/a-simple-llm-wallet&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ---
 
