@@ -1,6 +1,6 @@
 {
   "name": "a-simple-llm-wallet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A local-first wallet for managing LLM inference provider credentials",
   "type": "module",
   "bin": {
