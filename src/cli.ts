@@ -93,7 +93,7 @@ const program = new Command();
 program
   .name("llm-wallet")
   .description("A local-first wallet for LLM inference provider credentials")
-  .version("0.1.0");
+  .version("0.1.1");
 
 // ─── LIST ────────────────────────────────────────────────────────────────────
 

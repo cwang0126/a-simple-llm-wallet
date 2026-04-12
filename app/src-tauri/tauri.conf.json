@@ -1,6 +1,6 @@
 {
   "productName": "LLM Wallet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.cwang0126.llm-wallet",
   "build": {
     "beforeDevCommand": "npm run dev",
