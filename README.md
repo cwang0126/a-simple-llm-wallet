@@ -3,7 +3,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/cwang0126/a-simple-llm-wallet?style=flat&color=gold)](https://github.com/cwang0126/a-simple-llm-wallet/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/cwang0126/a-simple-llm-wallet?style=flat)](https://github.com/cwang0126/a-simple-llm-wallet/network/members)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen)](https://github.com/cwang0126/a-simple-llm-wallet/releases)
+[![Version](https://img.shields.io/github/v/tag/cwang0126/a-simple-llm-wallet?label=version&color=brightgreen)](https://github.com/cwang0126/a-simple-llm-wallet/releases)
 
 A local-first CLI & App wallet for managing LLM inference provider credentials. Store API keys, model names, and endpoint URLs from any provider in one place — all on your machine, zero cloud sync, zero leakage risk.
 
