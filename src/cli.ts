@@ -3,15 +3,45 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import ora from "ora";
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync, existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { table } from "table";
 
 import * as wallet from "./wallet.js";
 import * as chat from "./chat.js";
-import { generateEnvContent, generateGenericEnvContent } from "./env-export.js";
+import { generateEnvContent, generateGenericEnvContent, generateCustomPrefixEnvContent } from "./env-export.js";
 import { getWalletPath } from "./storage.js";
 import type { Modality, ChatMessage, Provider } from "./types.js";
 import { daysUntilExpiry, getGroup } from "./types.js";
+import { printBanner } from "./banner.js";
+
+// ─── Known Providers ──────────────────────────────────────────────────────────
+
+interface KnownProvider {
+  name: string;
+  baseUrl: string;
+  modelsEndpoint: string;
+}
+
+function loadKnownProviders(): KnownProvider[] {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    // Try repo root (dev) then dist parent
+    const candidates = [
+      join(__dirname, "..", "providers.json"),
+      join(__dirname, "providers.json"),
+    ];
+    for (const p of candidates) {
+      if (existsSync(p)) {
+        return JSON.parse(readFileSync(p, "utf-8")) as KnownProvider[];
+      }
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+const KNOWN_PROVIDERS = loadKnownProviders();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,11 +82,14 @@ function formatExpiry(p: Provider): string {
   return chalk.green(`${days}d left`);
 }
 
+function formatContextWindow(n: number): string {
+  if (n >= 1_000_000) return `${n.toLocaleString()} (${Math.round(n / 1_048_576)}M)`;
+  if (n >= 1_000) return `${n.toLocaleString()} (${Math.round(n / 1_024)}K)`;
+  return String(n);
+}
+
 /**
  * Resolve a provider for commands that target a single model.
- * Usage: `cmd <provider> [model]`
- * If the provider group has multiple models and no model arg is given,
- * prompts the user to pick one interactively.
  */
 async function resolveOrPrompt(
   nameOrGroup: string,
@@ -71,7 +104,6 @@ async function resolveOrPrompt(
     return null;
   }
 
-  // Multiple candidates — prompt user to pick
   const { chosen } = await inquirer.prompt([
     {
       type: "list",
@@ -93,7 +125,7 @@ const program = new Command();
 program
   .name("llm-wallet")
   .description("A local-first wallet for LLM inference provider credentials")
-  .version("0.1.1");
+  .version("0.2.0");
 
 // ─── LIST ────────────────────────────────────────────────────────────────────
 
@@ -111,8 +143,7 @@ program
     const rows = [
       [
         chalk.bold("ID"),
-        chalk.bold("Group"),
-        chalk.bold("Label"),
+        chalk.bold("Provider"),
         chalk.bold("Model"),
         chalk.bold("Context"),
         chalk.bold("Expires"),
@@ -121,9 +152,8 @@ program
       ...providers.map((p) => [
         p.id.slice(0, 8),
         chalk.cyan(getGroup(p)),
-        p.name,
         p.modelName,
-        p.contextWindow ? String(p.contextWindow) : "-",
+        p.contextWindow ? formatContextWindow(p.contextWindow) : "-",
         formatExpiry(p),
         p.modalities.join(", "),
       ]),
@@ -135,85 +165,279 @@ program
 
 // ─── ADD ─────────────────────────────────────────────────────────────────────
 
+/** Sentinel thrown when the user presses ESC to go back one step. */
+class GoBack extends Error { constructor() { super("go-back"); } }
+
+/**
+ * Wrap an inquirer prompt so that pressing ESC throws GoBack.
+ * Strategy: listen for raw keypress on stdin; if ESC arrives before the
+ * prompt resolves, close the inquirer UI and reject with GoBack.
+ */
+async function promptWithEsc<T>(
+  questions: Parameters<typeof inquirer.prompt>[0]
+): Promise<T> {
+  const rl = (inquirer.prompt as unknown as { ui?: { rl?: NodeJS.ReadStream } });
+  let goBack = false;
+
+  // Enable keypress events on stdin
+  const { emitKeypressEvents } = await import("readline");
+  emitKeypressEvents(process.stdin);
+  if ((process.stdin as NodeJS.ReadStream).isTTY) {
+    (process.stdin as NodeJS.ReadStream).setRawMode?.(true);
+  }
+
+  const onKeypress = (_: unknown, key: { name?: string; sequence?: string }) => {
+    if (key?.name === "escape" || key?.sequence === "\x1b") {
+      goBack = true;
+      // Send Ctrl-C to abort the active inquirer prompt
+      process.stdin.emit("keypress", "\x03", { name: "c", ctrl: true, meta: false, shift: false, sequence: "\x03" });
+    }
+  };
+
+  process.stdin.on("keypress", onKeypress);
+
+  try {
+    const answers = await inquirer.prompt(questions as Parameters<typeof inquirer.prompt>[0]);
+    if (goBack) throw new GoBack();
+    return answers as T;
+  } catch (err) {
+    if (goBack || (err instanceof Error && (err.message === "go-back" || err.message.includes("force closed") || err.message.includes("readline was closed")))) {
+      throw new GoBack();
+    }
+    throw err;
+  } finally {
+    process.stdin.removeListener("keypress", onKeypress);
+    if ((process.stdin as NodeJS.ReadStream).isTTY) {
+      (process.stdin as NodeJS.ReadStream).setRawMode?.(false);
+    }
+  }
+}
+
 program
   .command("add")
-  .description("Add a new provider / model entry")
+  .description("Add a new provider / model entry  (press ESC on any prompt to go back)")
   .action(async () => {
-    const answers = await inquirer.prompt([
-      {
-        type: "input",
-        name: "providerGroup",
-        message: "Provider group name (e.g. Ollama, OpenAI, Groq):",
-        validate: (v) => v.trim().length > 0 || "Required",
-      },
-      {
-        type: "input",
-        name: "name",
-        message: "Entry label (e.g. gemma4:e4b, gpt-4o — defaults to model name):",
-      },
-      {
-        type: "input",
-        name: "baseUrl",
-        message: "Base URL:",
-        default: "https://api.openai.com/v1",
-        validate: (v) => v.trim().length > 0 || "Required",
-      },
-      {
-        type: "password",
-        name: "apiKey",
-        message: "API Key:",
-        mask: "*",
-        validate: (v) => v.trim().length > 0 || "Required",
-      },
-      {
-        type: "input",
-        name: "modelName",
-        message: "Model name (e.g. gpt-4o, gemma4:e4b):",
-        validate: (v) => v.trim().length > 0 || "Required",
-      },
-      {
-        type: "number",
-        name: "contextWindow",
-        message: "Context window (tokens, leave blank to skip):",
-        default: undefined,
-      },
-      {
-        type: "checkbox",
-        name: "modalities",
-        message: "Supported modalities:",
-        choices: ALL_MODALITIES,
-        default: ["text"],
-      },
-      {
-        type: "input",
-        name: "expiryInput",
-        message: "Expiry (e.g. 30d, 3m, 1y — leave blank for none):",
-      },
-      {
-        type: "input",
-        name: "notes",
-        message: "Notes (optional):",
-      },
-    ]);
+    console.log(chalk.dim("  Tip: press ESC on any prompt to go back to the previous step.\n"));
 
-    const modelName = answers.modelName.trim();
-    const label = answers.name.trim() || modelName;
-    const expiresAt = answers.expiryInput?.trim() ? parseExpiry(answers.expiryInput.trim()) : undefined;
+    type StepResult = Record<string, unknown>;
 
-    if (answers.expiryInput?.trim() && !expiresAt) {
+    let selectedBaseUrl = "";
+    let selectedGroupName = "";
+    const stepAnswers: (StepResult | null)[] = Array(8).fill(null);
+    let step = 0;
+    const MAX_STEP = 7;
+
+    while (step <= MAX_STEP) {
+      try {
+        // ── Step 0: pick known provider ──────────────────────────────────
+        if (step === 0) {
+          if (KNOWN_PROVIDERS.length > 0) {
+            const ans = await promptWithEsc<{ providerChoice: string }>([{
+              type: "list",
+              name: "providerChoice",
+              message: "Select a known provider or enter custom:",
+              choices: [
+                ...KNOWN_PROVIDERS.map((kp) => ({
+                  name: `${kp.name}  ${chalk.dim(kp.baseUrl)}`,
+                  value: kp.name,
+                })),
+                { name: chalk.italic("Custom…"), value: "__custom__" },
+              ],
+              default: stepAnswers[0]?.providerChoice as string | undefined,
+            }]);
+            stepAnswers[0] = ans;
+            if (ans.providerChoice !== "__custom__") {
+              const kp = KNOWN_PROVIDERS.find((p) => p.name === ans.providerChoice)!;
+              selectedGroupName = kp.name;
+              selectedBaseUrl = kp.baseUrl;
+            } else {
+              selectedGroupName = "";
+              selectedBaseUrl = "";
+            }
+          }
+          step++; continue;
+        }
+
+        // ── Step 1: provider group name ──────────────────────────────────
+        if (step === 1) {
+          const ans = await promptWithEsc<{ providerGroup: string }>([{
+            type: "input",
+            name: "providerGroup",
+            message: "Provider group name:",
+            default: ((stepAnswers[1]?.providerGroup as string) ?? selectedGroupName) || undefined,
+            validate: (v: string) => v.trim().length > 0 || "Required",
+          }]);
+          stepAnswers[1] = ans;
+          step++; continue;
+        }
+
+        // ── Step 2: base URL ─────────────────────────────────────────────
+        if (step === 2) {
+          const ans = await promptWithEsc<{ baseUrl: string }>([{
+            type: "input",
+            name: "baseUrl",
+            message: "Base URL:",
+            default: ((stepAnswers[2]?.baseUrl as string) ?? selectedBaseUrl) || undefined,
+            validate: (v: string) => v.trim().length > 0 || "Required",
+          }]);
+          stepAnswers[2] = ans;
+          step++; continue;
+        }
+
+        // ── Step 3: API key ──────────────────────────────────────────────
+        if (step === 3) {
+          const ans = await promptWithEsc<{ apiKey: string }>([{
+            type: "password",
+            name: "apiKey",
+            message: "API Key:",
+            mask: "*",
+            validate: (v: string) => v.trim().length > 0 || "Required",
+          }]);
+          stepAnswers[3] = ans;
+          step++; continue;
+        }
+
+        // ── Step 4: model ────────────────────────────────────────────────
+        if (step === 4) {
+          const baseUrl = (stepAnswers[2]?.baseUrl as string).trim();
+          const apiKey = (stepAnswers[3]?.apiKey as string).trim();
+          let modelName = (stepAnswers[4]?.modelName as string) ?? "";
+
+          const { fetchModelsChoice } = await promptWithEsc<{ fetchModelsChoice: boolean }>([{
+            type: "confirm",
+            name: "fetchModelsChoice",
+            message: "Fetch available models from the provider endpoint?",
+            default: true,
+          }]);
+
+          if (fetchModelsChoice) {
+            const spinner = ora("Fetching models…").start();
+            try {
+              const models = await chat.listModels(baseUrl, apiKey);
+              spinner.stop();
+              if (models.length === 0) {
+                console.log(chalk.yellow("  No models returned. Enter model name manually."));
+              } else {
+                const { chosenModel } = await promptWithEsc<{ chosenModel: string }>([{
+                  type: "list",
+                  name: "chosenModel",
+                  message: "Select a model:",
+                  choices: models.map((m) => ({
+                    name: m.info ? `${m.id}  ${chalk.dim(m.info.slice(0, 80))}` : m.id,
+                    value: m.id,
+                  })),
+                  default: modelName || undefined,
+                }]);
+                modelName = chosenModel;
+              }
+            } catch (err) {
+              if (err instanceof GoBack) throw err;
+              spinner.fail(chalk.red("Failed: " + (err instanceof Error ? err.message : String(err))));
+            }
+          }
+
+          if (!modelName) {
+            const { manualModel } = await promptWithEsc<{ manualModel: string }>([{
+              type: "input",
+              name: "manualModel",
+              message: "Model name (e.g. gpt-4o, gemma4:e4b):",
+              validate: (v: string) => v.trim().length > 0 || "Required",
+            }]);
+            modelName = manualModel.trim();
+          }
+
+          stepAnswers[4] = { modelName };
+          step++; continue;
+        }
+
+        // ── Step 5: context window ───────────────────────────────────────
+        if (step === 5) {
+          const ans = await promptWithEsc<{ contextWindow: number | undefined }>([{
+            type: "number",
+            name: "contextWindow",
+            message: "Context window tokens (leave blank to skip):",
+            default: stepAnswers[5]?.contextWindow as number | undefined,
+          }]);
+          stepAnswers[5] = ans;
+          step++; continue;
+        }
+
+        // ── Step 6: modalities ───────────────────────────────────────────
+        if (step === 6) {
+          const ans = await promptWithEsc<{ modalities: Modality[] }>([{
+            type: "checkbox",
+            name: "modalities",
+            message: "Supported modalities:",
+            choices: ALL_MODALITIES,
+            default: (stepAnswers[6]?.modalities as Modality[]) ?? ["text"],
+          }]);
+          stepAnswers[6] = ans;
+          step++; continue;
+        }
+
+        // ── Step 7: expiry / usage / notes ───────────────────────────────
+        if (step === 7) {
+          const ans = await promptWithEsc<{ expiryInput: string; usage: string; notes: string }>([
+            {
+              type: "input",
+              name: "expiryInput",
+              message: "Expiry (e.g. 30d, 3m, 1y — blank for none):",
+              default: stepAnswers[7]?.expiryInput as string | undefined,
+            },
+            {
+              type: "input",
+              name: "usage",
+              message: "Usage dashboard URL (optional):",
+              default: stepAnswers[7]?.usage as string | undefined,
+            },
+            {
+              type: "input",
+              name: "notes",
+              message: "Notes (optional):",
+              default: stepAnswers[7]?.notes as string | undefined,
+            },
+          ]);
+          stepAnswers[7] = ans;
+          step++; continue;
+        }
+
+        break;
+      } catch (err) {
+        if (err instanceof GoBack) {
+          if (step === 0) { console.log(chalk.dim("\nCancelled.")); return; }
+          step = Math.max(0, step - 1);
+          console.log(chalk.dim("  ↩ Going back…\n"));
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    // ── Assemble and save ────────────────────────────────────────────────────
+    const s1 = stepAnswers[1] as { providerGroup: string };
+    const s2 = stepAnswers[2] as { baseUrl: string };
+    const s3 = stepAnswers[3] as { apiKey: string };
+    const s4 = stepAnswers[4] as { modelName: string };
+    const s5 = stepAnswers[5] as { contextWindow?: number };
+    const s6 = stepAnswers[6] as { modalities: Modality[] };
+    const s7 = stepAnswers[7] as { expiryInput: string; usage: string; notes: string };
+
+    const expiresAt = s7.expiryInput?.trim() ? parseExpiry(s7.expiryInput.trim()) : undefined;
+    if (s7.expiryInput?.trim() && !expiresAt) {
       console.log(chalk.yellow("  ⚠ Could not parse expiry — use format like 30d, 3m, 1y. Skipping."));
     }
 
     const provider = wallet.addProvider({
-      providerGroup: answers.providerGroup.trim(),
-      name: label,
-      baseUrl: normalizeBaseUrl(answers.baseUrl),
-      apiKey: answers.apiKey.trim(),
-      modelName,
-      contextWindow: answers.contextWindow || undefined,
-      modalities: answers.modalities,
+      provider: s1.providerGroup.trim(),
+      name: s4.modelName,
+      baseUrl: normalizeBaseUrl(s2.baseUrl),
+      apiKey: s3.apiKey.trim(),
+      modelName: s4.modelName,
+      contextWindow: s5.contextWindow || undefined,
+      modalities: s6.modalities,
       expiresAt,
-      notes: answers.notes?.trim() || undefined,
+      usage: s7.usage?.trim() || undefined,
+      notes: s7.notes?.trim() || undefined,
     });
 
     console.log(chalk.green(`\n✓ Added "${getGroup(provider)} / ${provider.modelName}" (id: ${provider.id.slice(0, 8)})`));
@@ -235,7 +459,7 @@ program
       {
         type: "input",
         name: "providerGroup",
-        message: "Provider group name:",
+        message: "Provider:",
         default: getGroup(existing),
       },
       {
@@ -282,6 +506,12 @@ program
       },
       {
         type: "input",
+        name: "usage",
+        message: "Usage dashboard URL (leave blank to keep):",
+        default: existing.usage ?? "",
+      },
+      {
+        type: "input",
         name: "notes",
         message: "Notes:",
         default: existing.notes ?? "",
@@ -296,7 +526,7 @@ program
     }
 
     const updated = wallet.updateProvider(existing.id, {
-      providerGroup: answers.providerGroup.trim(),
+      provider: answers.providerGroup.trim(),
       name: answers.name.trim(),
       baseUrl: normalizeBaseUrl(answers.baseUrl),
       apiKey: answers.apiKey?.trim() || existing.apiKey,
@@ -304,6 +534,7 @@ program
       contextWindow: answers.contextWindow || undefined,
       modalities: answers.modalities,
       expiresAt,
+      usage: answers.usage?.trim() || undefined,
       notes: answers.notes?.trim() || undefined,
     });
 
@@ -347,15 +578,15 @@ program
     if (!provider) process.exit(1);
 
     console.log(`
-${chalk.bold("Group:")}         ${chalk.cyan(getGroup(provider))}
-${chalk.bold("Label:")}         ${provider.name}
+${chalk.bold("Provider:")}      ${chalk.cyan(getGroup(provider))}
 ${chalk.bold("ID:")}            ${provider.id}
 ${chalk.bold("Base URL:")}      ${provider.baseUrl}
 ${chalk.bold("API Key:")}       ${"*".repeat(8)}${provider.apiKey.slice(-4)}
 ${chalk.bold("Model:")}         ${provider.modelName}
-${chalk.bold("Context:")}       ${provider.contextWindow ?? "-"}
+${chalk.bold("Context:")}       ${provider.contextWindow ? formatContextWindow(provider.contextWindow) : "-"}
 ${chalk.bold("Modalities:")}    ${provider.modalities.join(", ")}
 ${chalk.bold("Expires:")}       ${provider.expiresAt ? `${new Date(provider.expiresAt).toLocaleDateString()} (${formatExpiry(provider)})` : "-"}
+${chalk.bold("Usage URL:")}     ${provider.usage ?? "-"}
 ${chalk.bold("Notes:")}         ${provider.notes ?? "-"}
 ${chalk.bold("Created:")}       ${provider.createdAt}
 ${chalk.bold("Updated:")}       ${provider.updatedAt}
@@ -430,13 +661,19 @@ program
   .description("Export provider credentials as .env variables")
   .option("-o, --output <file>", "Write to a file instead of stdout")
   .option("-g, --generic", "Use generic variable names (OPENAI_*)")
-  .action(async (providerArg: string, modelArg?: string, options?: { output?: string; generic?: boolean }) => {
+  .option("-p, --prefix <prefix>", "Use a custom variable prefix")
+  .action(async (providerArg: string, modelArg?: string, options?: { output?: string; generic?: boolean; prefix?: string }) => {
     const provider = await resolveOrPrompt(providerArg, modelArg);
     if (!provider) process.exit(1);
 
-    const content = options?.generic
-      ? generateGenericEnvContent(provider)
-      : generateEnvContent(provider);
+    let content: string;
+    if (options?.prefix) {
+      content = generateCustomPrefixEnvContent(provider, options.prefix);
+    } else if (options?.generic) {
+      content = generateGenericEnvContent(provider);
+    } else {
+      content = generateEnvContent(provider);
+    }
 
     if (options?.output) {
       writeFileSync(options.output, content, "utf-8");
@@ -445,5 +682,10 @@ program
       console.log(content);
     }
   });
+
+// Print banner before parse when called with no arguments
+if (process.argv.length <= 2) {
+  printBanner();
+}
 
 program.parse();

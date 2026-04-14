@@ -11,8 +11,10 @@ use tauri::{
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Provider {
     pub id: String,
-    #[serde(rename = "providerGroup", skip_serializing_if = "Option::is_none")]
-    pub provider_group: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "provider", skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
     #[serde(rename = "baseUrl")]
     pub base_url: String,
     #[serde(rename = "apiKey")]
@@ -24,6 +26,12 @@ pub struct Provider {
     pub modalities: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage: Option<String>,
+    #[serde(rename = "modelsEndpoint", skip_serializing_if = "Option::is_none")]
+    pub models_endpoint: Option<String>,
+    #[serde(rename = "modelsAuthStyle", skip_serializing_if = "Option::is_none")]
+    pub models_auth_style: Option<String>,
     #[serde(rename = "expiresAt", skip_serializing_if = "Option::is_none")]
     pub expires_at: Option<String>,
     #[serde(rename = "createdAt")]
@@ -38,9 +46,17 @@ pub struct WalletData {
     pub providers: Vec<Provider>,
 }
 
-fn wallet_path() -> PathBuf {
+fn wallet_dir() -> PathBuf {
     let home = dirs_next::home_dir().expect("Cannot find home directory");
-    home.join(".llm-wallet").join("wallet.json")
+    home.join(".llm-wallet")
+}
+
+fn wallet_path() -> PathBuf {
+    wallet_dir().join("wallet.json")
+}
+
+fn log_path() -> PathBuf {
+    wallet_dir().join("log").join("connectivity.log")
 }
 
 fn load_wallet() -> WalletData {
@@ -65,6 +81,19 @@ fn save_wallet(data: &WalletData) -> Result<(), String> {
     }
     let json = serde_json::to_string_pretty(data).map_err(|e| e.to_string())?;
     fs::write(&path, json).map_err(|e| e.to_string())
+}
+
+fn append_log(entry: &str) {
+    let path = log_path();
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let now = chrono::Utc::now().to_rfc3339();
+    let line = format!("[{}] {}\n", now, entry);
+    use std::io::Write;
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = f.write_all(line.as_bytes());
+    }
 }
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -114,7 +143,6 @@ fn get_wallet_path() -> String {
 #[tauri::command]
 fn open_wallet_file() -> Result<(), String> {
     let path = wallet_path();
-    // Ensure the file exists before trying to open it
     if !path.exists() {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -122,12 +150,109 @@ fn open_wallet_file() -> Result<(), String> {
         fs::write(&path, r#"{"version":"1.0.0","providers":[]}"#)
             .map_err(|e| e.to_string())?;
     }
-    // macOS: open with default app (TextEdit / VS Code / etc.)
     Command::new("open")
         .arg(path)
         .spawn()
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+/// Open a URL in the default browser
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    Command::new("open")
+        .arg(&url)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Append a connectivity test result to the log file
+#[tauri::command]
+fn log_connectivity(entry: String) {
+    append_log(&entry);
+}
+
+/// Fetch models from a provider endpoint (bypasses webview CORS/CSP restrictions)
+#[tauri::command]
+async fn fetch_models(
+    url: String,
+    api_key: String,
+    auth_style: String,
+) -> Result<Vec<serde_json::Value>, String> {
+    let client = reqwest::Client::builder()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let fetch_url = if auth_style == "query_key" {
+        let sep = if url.contains('?') { "&" } else { "?" };
+        format!("{}{}key={}", url, sep, api_key)
+    } else {
+        url.clone()
+    };
+
+    let mut req = client.get(&fetch_url);
+
+    match auth_style.as_str() {
+        "none" | "query_key" => {}
+        "github" => {
+            req = req
+                .header("Authorization", format!("Bearer {}", api_key))
+                .header("Accept", "application/vnd.github+json")
+                .header("X-GitHub-Api-Version", "2022-11-28");
+        }
+        _ => {
+            // "bearer" — default
+            req = req.header("Authorization", format!("Bearer {}", api_key));
+        }
+    }
+
+    let res = req.send().await.map_err(|e| e.to_string())?;
+    let status = res.status();
+    if !status.is_success() {
+        let body = res.text().await.unwrap_or_default();
+        return Err(format!("HTTP {}: {}", status.as_u16(), body.chars().take(300).collect::<String>()));
+    }
+
+    let json: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+
+    // Normalise to array
+    let items = if json.is_array() {
+        json.as_array().cloned().unwrap_or_default()
+    } else if let Some(data) = json.get("data").and_then(|v| v.as_array()) {
+        data.clone()
+    } else if let Some(models) = json.get("models").and_then(|v| v.as_array()) {
+        models.clone()
+    } else {
+        vec![]
+    };
+
+    Ok(items)
+}
+#[tauri::command]
+fn get_known_providers() -> Vec<serde_json::Value> {
+    // Try to read from the resource directory
+    let candidates = vec![
+        // Bundled resource path (production)
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("providers.json"))),
+        // Dev: repo root relative to executable
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().and_then(|d| d.parent()).and_then(|d| d.parent()).and_then(|d| d.parent()).and_then(|d| d.parent()).map(|d| d.join("providers.json"))),
+    ];
+
+    for candidate in candidates.into_iter().flatten() {
+        if candidate.exists() {
+            if let Ok(raw) = fs::read_to_string(&candidate) {
+                if let Ok(val) = serde_json::from_str::<Vec<serde_json::Value>>(&raw) {
+                    return val;
+                }
+            }
+        }
+    }
+    vec![]
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -141,6 +266,10 @@ pub fn run() {
             delete_provider,
             get_wallet_path,
             open_wallet_file,
+            open_url,
+            log_connectivity,
+            get_known_providers,
+            fetch_models,
         ])
         .setup(|app| {
             setup_tray(app)?;

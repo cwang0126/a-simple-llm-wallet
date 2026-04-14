@@ -11,15 +11,29 @@ export function getProvider(id: string): Provider | undefined {
 }
 
 /**
- * Find by name or providerGroup (case-insensitive).
- * If multiple models share the same group, returns all of them.
+ * Find by name or providerGroup (case-insensitive, partial match, dash-normalized).
+ * Tries exact match first, then falls back to contains match.
+ * Dashes in the input are treated as spaces: "google-ai-studio" → "google ai studio"
  */
 export function findProvidersByGroup(nameOrGroup: string): Provider[] {
-  const lower = nameOrGroup.toLowerCase();
-  return storage.load().providers.filter(
+  // Normalize: replace dashes with spaces, lowercase, trim
+  const normalize = (s: string) => s.toLowerCase().trim().replace(/-/g, " ");
+  const lower = normalize(nameOrGroup);
+  const all = storage.load().providers;
+
+  // 1. Exact match (after normalization)
+  const exact = all.filter(
     (p) =>
-      p.name.toLowerCase() === lower ||
-      (p.providerGroup ?? "").toLowerCase() === lower
+      normalize(p.provider ?? "") === lower ||
+      normalize(p.name ?? "") === lower
+  );
+  if (exact.length > 0) return exact;
+
+  // 2. Partial/contains match
+  return all.filter(
+    (p) =>
+      normalize(p.provider ?? "").includes(lower) ||
+      normalize(p.name ?? "").includes(lower)
   );
 }
 
@@ -43,8 +57,11 @@ export function resolveProvider(
 
   if (modelName) {
     const lower = modelName.toLowerCase();
-    const match = candidates.find((p) => p.modelName.toLowerCase() === lower);
-    return { provider: match ?? null, candidates };
+    // Exact match first, then partial
+    const exact = candidates.find((p) => p.modelName.toLowerCase() === lower);
+    if (exact) return { provider: exact, candidates };
+    const partial = candidates.find((p) => p.modelName.toLowerCase().includes(lower));
+    return { provider: partial ?? null, candidates };
   }
 
   // No model specified — only auto-resolve if there's exactly one
@@ -54,13 +71,14 @@ export function resolveProvider(
 
 export interface ProviderInput {
   name: string;
-  providerGroup?: string;
+  provider?: string;
   baseUrl: string;
   apiKey: string;
   modelName: string;
   contextWindow?: number;
   modalities: Modality[];
   notes?: string;
+  usage?: string;
   expiresAt?: string;
 }
 

@@ -24,10 +24,10 @@ Expected output:
 ```
  ✓ src/tests/env-export.test.ts (10)
  ✓ src/tests/chat.test.ts (5)
- ✓ src/tests/wallet.test.ts (11)
+ ✓ src/tests/wallet.test.ts (16)
 
  Test Files  3 passed (3)
-      Tests  26 passed (26)
+      Tests  31 passed (31)
 ```
 
 ## Test Structure
@@ -45,7 +45,7 @@ All tests are fully isolated — the storage layer (`~/.llm-wallet/wallet.json`)
 
 ---
 
-## wallet.test.ts — 11 tests
+## wallet.test.ts — 16 tests
 
 Tests the core provider management logic in `src/wallet.ts`. The `storage` module is mocked so no disk I/O occurs.
 

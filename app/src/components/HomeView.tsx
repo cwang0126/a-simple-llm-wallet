@@ -2,7 +2,14 @@ import { useState } from "react";
 import { Plus, MessageSquare, Zap, Copy, Check } from "lucide-react";
 import type { Provider } from "../types";
 import { getGroup, daysUntilExpiry } from "../types";
+import { logConnectivity } from "../hooks/useProviders";
 import styles from "./HomeView.module.css";
+
+function formatContextWindow(n: number): string {
+  if (n >= 1_000_000) return `${Math.round(n / 1_048_576)}M ctx`;
+  if (n >= 1_000) return `${Math.round(n / 1_024)}K ctx`;
+  return `${n} ctx`;
+}
 
 interface Props {
   providers: Provider[];
@@ -10,7 +17,6 @@ interface Props {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onChat: (id: string) => void;
-  onTest: (id: string) => void;
 }
 
 interface TestState {
@@ -29,6 +35,7 @@ function ProviderCard({ provider, onSelect, onChat }: {
   const runTest = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setTestState({ status: "testing" });
+    const label = `${getGroup(provider)} / ${provider.modelName}`;
     try {
       const res = await fetch(`${provider.baseUrl}/chat/completions`, {
         method: "POST",
@@ -42,9 +49,12 @@ function ProviderCard({ provider, onSelect, onChat }: {
           max_tokens: 10,
         }),
       });
-      setTestState({ status: res.ok ? "ok" : "fail" });
-    } catch {
+      const status = res.ok ? "ok" : "fail";
+      setTestState({ status });
+      await logConnectivity(`${status.toUpperCase().padEnd(4)} ${label} — HTTP ${res.status}`);
+    } catch (err) {
       setTestState({ status: "fail" });
+      await logConnectivity(`FAIL  ${label} — ${err instanceof Error ? err.message : String(err)}`);
     }
     setTimeout(() => setTestState({ status: "idle" }), 4000);
   };
@@ -79,7 +89,7 @@ function ProviderCard({ provider, onSelect, onChat }: {
       <div className={styles.cardMeta}>
         <span className={styles.metaUrl}>{provider.baseUrl}</span>
         {provider.contextWindow && (
-          <span className={styles.metaCtx}>{(provider.contextWindow / 1000).toFixed(0)}K ctx</span>
+          <span className={styles.metaCtx}>{formatContextWindow(provider.contextWindow)}</span>
         )}
       </div>
 

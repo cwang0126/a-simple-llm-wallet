@@ -18,9 +18,12 @@ Managing credentials across OpenAI, Groq, Ollama, Together, and other providers 
 ## Features
 
 - **Unified credential store** — manage any number of OpenAI-compatible providers in one place
-- **Connectivity test** — verify a base URL and API key are working with a single command
+- **Known provider catalog** — select from a built-in list of popular providers with auto-filled base URLs
+- **Model discovery** — fetch available models directly from a provider's endpoint and pick from a list
+- **Connectivity test** — verify a base URL and API key are working with a single command (results logged to `~/.llm-wallet/log/connectivity.log`)
 - **Interactive chat** — multi-turn chat session in the terminal to test a model directly
-- **`.env` export** — generate environment variable blocks for use in other projects, with prefixed or generic (`OPENAI_*`) naming
+- **`.env` export** — generate environment variable blocks with prefixed, generic (`OPENAI_*`), or custom prefix naming
+- **Usage dashboard link** — store a URL to the provider's billing/usage page for quick access
 - **Fully local** — data lives at `~/.llm-wallet/wallet.json`, never leaves your machine
 - **Portable credentials** — wallet data persists across reinstalls automatically
 
@@ -143,6 +146,9 @@ llm-wallet export <name-or-id> -o .env
 
 # Use generic OPENAI_* names (compatible with most tools and frameworks)
 llm-wallet export <name-or-id> --generic -o .env
+
+# Use a custom variable prefix
+llm-wallet export <name-or-id> --prefix MY_APP -o .env
 ```
 
 **Prefixed output** (default):
@@ -183,7 +189,40 @@ Any provider with an OpenAI-compatible API works out of the box, including:
 
 ---
 
-## Data Storage
+## Known Provider Catalog
+
+`providers.json` at the repo root lists well-known providers with their base URLs and model-list endpoints. This powers the "select known provider" feature in both the CLI and desktop app.
+
+### Add a new provider
+
+Edit `providers.json` and add an entry:
+
+```json
+{
+  "name": "My Provider",
+  "baseUrl": "https://api.myprovider.com/v1",
+  "modelsEndpoint": "/models"
+}
+```
+
+- `name` — display name shown in the picker
+- `baseUrl` — the API base URL (auto-filled when selected)
+- `modelsEndpoint` — path to the list-models endpoint (used for documentation; the app always calls `<baseUrl>/models`)
+
+The file is plain JSON — no build step required. Changes take effect immediately in the CLI and after rebuilding the desktop app.
+
+---
+
+## Connectivity Logs
+
+Test results are appended to `~/.llm-wallet/log/connectivity.log`:
+
+```
+[2026-04-14T10:00:00Z] OK    OpenAI / gpt-4o — "Hello! How can I help you today?"
+[2026-04-14T10:01:00Z] FAIL  Groq / llama3-8b — Connection refused
+```
+
+---
 
 All data is stored locally at:
 

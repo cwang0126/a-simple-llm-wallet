@@ -54,6 +54,12 @@
   justify-content: space-between;
 }
 
+.sectionLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .sectionLabel {
   font-size: 11px;
   font-weight: 600;
@@ -61,6 +67,25 @@
   letter-spacing: 0.06em;
   color: var(--text-muted);
 }
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.collapseAllBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  transition: color 0.15s, background 0.15s, opacity 0.15s;
+}
+.collapseAllBtn:hover { color: var(--text-secondary); background: var(--bg-hover); opacity: 1; }
 
 .addBtn {
   display: flex;
