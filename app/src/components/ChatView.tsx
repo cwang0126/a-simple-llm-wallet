@@ -204,7 +204,7 @@ export function ChatView({ provider, onBack }: Props) {
           <ArrowLeft size={16} />
         </button>
         <div className={styles.headerInfo}>
-          <span className={styles.headerName}>{provider.providerGroup ?? provider.modelName}</span>
+          <span className={styles.headerName}>{provider.provider ?? provider.modelName}</span>
           <span className={styles.headerModel}>{provider.modelName}</span>
         </div>
         <button
@@ -221,7 +221,7 @@ export function ChatView({ provider, onBack }: Props) {
         {messages.length === 0 && (
           <div className={styles.emptyState}>
             <Bot size={32} className={styles.emptyIcon} />
-            <p>Start a conversation with <strong>{provider.providerGroup ?? provider.modelName}</strong></p>
+            <p>Start a conversation with <strong>{provider.provider ?? provider.modelName}</strong></p>
             <p className={styles.emptyHint}>Enter to send · Shift+Enter for new line</p>
           </div>
         )}

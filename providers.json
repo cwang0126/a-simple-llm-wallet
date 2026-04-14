@@ -1,0 +1,82 @@
+[
+  {
+    "name": "OpenAI",
+    "baseUrl": "https://api.openai.com/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "Anthropic",
+    "baseUrl": "https://api.anthropic.com/v1",
+    "modelsEndpoint": null,
+    "authStyle": "bearer",
+    "note": "Anthropic does not have a public models discovery endpoint."
+  },
+  {
+    "name": "Google AI Studio",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "modelsEndpoint": "/models",
+    "authStyle": "query_key"
+  },
+  {
+    "name": "DeepSeek",
+    "baseUrl": "https://api.deepseek.com",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "Groq",
+    "baseUrl": "https://api.groq.com/openai/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "OpenRouter",
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "Mistral AI",
+    "baseUrl": "https://api.mistral.ai/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "Together AI",
+    "baseUrl": "https://api.together.xyz/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "Perplexity",
+    "baseUrl": "https://api.perplexity.ai",
+    "modelsEndpoint": null,
+    "authStyle": "bearer",
+    "note": "Perplexity does not support a GET /models discovery endpoint."
+  },
+  {
+    "name": "GitHub Models",
+    "baseUrl": "https://models.github.ai/inference",
+    "modelsEndpoint": "https://models.github.ai/catalog/models",
+    "authStyle": "none"
+  },
+  {
+    "name": "SiliconFlow",
+    "baseUrl": "https://api.siliconflow.cn/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "bearer"
+  },
+  {
+    "name": "Ollama",
+    "baseUrl": "http://localhost:11434",
+    "modelsEndpoint": "/api/tags",
+    "authStyle": "none"
+  },
+  {
+    "name": "LM Studio",
+    "baseUrl": "http://localhost:1234/v1",
+    "modelsEndpoint": "/models",
+    "authStyle": "none"
+  }
+]

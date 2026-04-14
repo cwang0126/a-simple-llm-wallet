@@ -63,12 +63,11 @@ export default function App() {
     }
   };
 
-  // Fix #9: cancel always returns to a sensible view
   const handleCancel = () => {
     if (selectedId) {
       setView("detail");
     } else {
-      setView(providers.length > 0 ? "home" : "home");
+      setView("home");
     }
   };
 
@@ -84,7 +83,6 @@ export default function App() {
     setView("home");
   };
 
-  // #2: duplicate a provider
   const handleDuplicate = (p: Provider) => {
     const now = new Date().toISOString();
     const copy: Provider = {
@@ -104,11 +102,11 @@ export default function App() {
     if (loading) return <div className={styles.loading}>Loading wallet…</div>;
 
     if (view === "add") {
-      return <ProviderForm onSave={handleSave} onCancel={handleCancel} />;
+      return <ProviderForm key="add" onSave={handleSave} onCancel={handleCancel} />;
     }
 
     if (view === "edit" && selected) {
-      return <ProviderForm initial={selected} onSave={handleSave} onCancel={handleCancel} />;
+      return <ProviderForm key={`edit-${selected.id}`} initial={selected} onSave={handleSave} onCancel={handleCancel} />;
     }
 
     if (view === "chat" && selected) {
@@ -141,7 +139,6 @@ export default function App() {
         onSelect={handleSelect}
         onAdd={handleAdd}
         onChat={(id) => { setSelectedId(id); setView("chat"); }}
-        onTest={(id) => { setSelectedId(id); }}
       />
     );
   };

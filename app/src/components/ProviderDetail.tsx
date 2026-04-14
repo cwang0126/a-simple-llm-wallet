@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
   Edit2, Trash2, MessageSquare, Download, Eye, EyeOff,
-  Copy, Check, Zap, Files,
+  Copy, Check, Zap, Files, ExternalLink,
 } from "lucide-react";
 import type { Provider } from "../types";
 import { getGroup, daysUntilExpiry } from "../types";
+import { logConnectivity, openUrl } from "../hooks/useProviders";
 import styles from "./ProviderDetail.module.css";
 
 interface Props {
@@ -27,6 +28,12 @@ function ExpiryValue({ provider }: { provider: Provider }) {
   if (days <= 7) return <span className={styles.expiredSoon}>{date} ({days}d left)</span>;
   if (days <= 30) return <span className={styles.expiringSoon}>{date} ({days}d left)</span>;
   return <span>{date} ({days}d left)</span>;
+}
+
+function formatContextWindow(n: number): string {
+  if (n >= 1_000_000) return `${n.toLocaleString()} (${Math.round(n / 1_048_576)}M)`;
+  if (n >= 1_000) return `${n.toLocaleString()} (${Math.round(n / 1_024)}K)`;
+  return String(n);
 }
 
 export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, onDuplicate }: Props) {
@@ -58,6 +65,7 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, o
 
   const runTest = async () => {
     setTestStatus("testing");
+    const label = `${getGroup(provider)} / ${provider.modelName}`;
     try {
       const res = await fetch(`${provider.baseUrl}/chat/completions`, {
         method: "POST",
@@ -71,9 +79,12 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, o
           max_tokens: 10,
         }),
       });
-      setTestStatus(res.ok ? "ok" : "fail");
-    } catch {
+      const status = res.ok ? "ok" : "fail";
+      setTestStatus(status);
+      await logConnectivity(`${status.toUpperCase().padEnd(4)} ${label} — HTTP ${res.status}`);
+    } catch (err) {
       setTestStatus("fail");
+      await logConnectivity(`FAIL  ${label} — ${err instanceof Error ? err.message : String(err)}`);
     }
     setTimeout(() => setTestStatus("idle"), 5000);
   };
@@ -95,7 +106,6 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, o
         </div>
 
         <div className={styles.actions}>
-          {/* #7: Test button with status light */}
           <button
             className={`${styles.actionBtn} ${styles.testBtn}`}
             onClick={runTest}
@@ -107,26 +117,26 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, o
             {testStatus === "testing" ? "Testing…" : "Test"}
           </button>
 
-          <button className={styles.actionBtn} onClick={onChat}>
+          <button className={styles.actionBtn} onClick={onChat} title="Chat">
             <MessageSquare size={15} /> Chat
           </button>
-          <button className={styles.actionBtn} onClick={onExport}>
+          <button className={styles.actionBtn} onClick={onExport} title="Export">
             <Download size={15} /> Export
+          </button>
+          <button className={styles.actionBtn} onClick={onEdit} title="Edit">
+            <Edit2 size={15} />
           </button>
           <button className={styles.actionBtn} onClick={onDuplicate} title="Duplicate">
             <Files size={15} />
           </button>
-          <button className={styles.actionBtn} onClick={onEdit}>
-            <Edit2 size={15} /> Edit
-          </button>
-          <button className={`${styles.actionBtn} ${styles.danger}`} onClick={onDelete}>
+          <button className={`${styles.actionBtn} ${styles.danger}`} onClick={onDelete} title="Delete">
             <Trash2 size={15} />
           </button>
         </div>
       </div>
 
       <div className={styles.grid}>
-        {/* Base URL with copy (#11) */}
+        {/* Base URL */}
         <div className={styles.field}>
           <div className={styles.fieldLabel}>Base URL</div>
           <div className={styles.keyRow}>
@@ -153,7 +163,10 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, o
           </div>
         </div>
 
-        <Field label="Context Window" value={provider.contextWindow ? `${provider.contextWindow.toLocaleString()} tokens` : "—"} />
+        <Field
+          label="Context Window"
+          value={provider.contextWindow ? formatContextWindow(provider.contextWindow) : "—"}
+        />
 
         <div className={styles.field}>
           <div className={styles.fieldLabel}>Expiry</div>
@@ -168,6 +181,22 @@ export function ProviderDetail({ provider, onEdit, onDelete, onChat, onExport, o
             ))}
           </div>
         </div>
+
+        {provider.usage && (
+          <div className={styles.field}>
+            <div className={styles.fieldLabel}>Usage Dashboard</div>
+            <div className={styles.keyRow}>
+              <span className={`${styles.fieldValue} ${styles.mono}`}>{provider.usage}</span>
+              <button
+                className={styles.iconBtn}
+                onClick={() => openUrl(provider.usage!)}
+                title="Open usage dashboard"
+              >
+                <ExternalLink size={13} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {provider.notes && <Field label="Notes" value={provider.notes} />}
         <Field label="Created" value={new Date(provider.createdAt).toLocaleString()} />

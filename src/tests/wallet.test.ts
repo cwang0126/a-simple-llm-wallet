@@ -22,7 +22,7 @@ function makeWalletData(overrides: Partial<WalletData> = {}): WalletData {
 const sampleProvider = {
   id: "abc-123",
   name: "llama3-8b-8192",
-  providerGroup: "Groq",
+  provider: "Groq",
   baseUrl: "https://api.groq.com/openai/v1",
   apiKey: "gsk_test",
   modelName: "llama3-8b-8192",
@@ -35,7 +35,7 @@ const sampleProvider = {
 const sampleProvider2 = {
   id: "abc-456",
   name: "llama3-70b-8192",
-  providerGroup: "Groq",
+  provider: "Groq",
   baseUrl: "https://api.groq.com/openai/v1",
   apiKey: "gsk_test",
   modelName: "llama3-70b-8192",
@@ -56,7 +56,7 @@ describe("listProviders", () => {
   it("returns all providers", () => {
     mockStorage.load.mockReturnValue(makeWalletData({ providers: [sampleProvider] }));
     expect(listProviders()).toHaveLength(1);
-    expect(listProviders()[0].providerGroup).toBe("Groq");
+    expect(listProviders()[0].provider).toBe("Groq");
   });
 });
 
@@ -124,7 +124,7 @@ describe("addProvider", () => {
     mockStorage.load.mockReturnValue(makeWalletData());
 
     const result = addProvider({
-      providerGroup: "OpenAI",
+      provider: "OpenAI",
       name: "gpt-4o",
       baseUrl: "https://api.openai.com/v1",
       apiKey: "sk-test",
@@ -132,7 +132,7 @@ describe("addProvider", () => {
       modalities: ["text", "vision"],
     });
 
-    expect(result.providerGroup).toBe("OpenAI");
+    expect(result.provider).toBe("OpenAI");
     expect(result.id).toBeDefined();
     expect(mockStorage.save).toHaveBeenCalledOnce();
     expect(mockStorage.save.mock.calls[0][0].providers[0].modelName).toBe("gpt-4o");
@@ -144,7 +144,7 @@ describe("updateProvider", () => {
     mockStorage.load.mockReturnValue(makeWalletData({ providers: [{ ...sampleProvider }] }));
     const result = updateProvider("abc-123", { modelName: "llama3-70b-8192" });
     expect(result?.modelName).toBe("llama3-70b-8192");
-    expect(result?.providerGroup).toBe("Groq");
+    expect(result?.provider).toBe("Groq");
     expect(mockStorage.save).toHaveBeenCalledOnce();
   });
 

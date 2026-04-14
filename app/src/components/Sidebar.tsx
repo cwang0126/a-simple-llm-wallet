@@ -1,6 +1,6 @@
 import {
   Sun, Moon, Plus, Wallet, ChevronDown, ChevronRight,
-  FolderOpen, Settings, X,
+  FolderOpen, Settings, X, ChevronsDownUp, ChevronsUpDown,
 } from "lucide-react";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -45,6 +45,12 @@ export function Sidebar({
   const toggleCollapse = (g: string) =>
     setCollapsed((prev) => ({ ...prev, [g]: !prev[g] }));
 
+  const allCollapsed = groupOrder.length > 0 && groupOrder.every((g) => collapsed[g]);
+  const toggleAll = () => {
+    const next = !allCollapsed;
+    setCollapsed(Object.fromEntries(groupOrder.map((g) => [g, next])));
+  };
+
   const moveGroup = (name: string, dir: -1 | 1) => {
     const list = [...groupOrder];
     const idx = list.indexOf(name);
@@ -69,7 +75,18 @@ export function Sidebar({
       </div>
 
       <div className={styles.section}>
-        <div className={styles.sectionLabel}>Providers</div>
+        <div className={styles.sectionLabelRow}>
+          <div className={styles.sectionLabel}>Providers</div>
+          {groupOrder.length > 0 && (
+            <button
+              className={styles.collapseAllBtn}
+              onClick={toggleAll}
+              title={allCollapsed ? "Expand all" : "Collapse all"}
+            >
+              {allCollapsed ? <ChevronsUpDown size={12} /> : <ChevronsDownUp size={12} />}
+            </button>
+          )}
+        </div>
         <button className={styles.addBtn} onClick={onAdd}>
           <Plus size={14} /> Add
         </button>
@@ -83,26 +100,19 @@ export function Sidebar({
             const models = groups[groupName];
             if (!models) return null;
             const isCollapsed = collapsed[groupName] ?? false;
-            const isSingle = models.length === 1;
 
             return (
               <div key={groupName} className={styles.group}>
                 <div className={styles.groupRow}>
-                  {/* Left: collapse toggle or plain name */}
-                  {!isSingle ? (
-                    <button
-                      className={styles.groupHeader}
-                      onClick={() => toggleCollapse(groupName)}
-                    >
-                      {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                      <span className={styles.groupName}>{groupName}</span>
-                      <span className={styles.groupCount}>{models.length}</span>
-                    </button>
-                  ) : (
-                    <div className={styles.groupHeaderPlaceholder}>
-                      <span className={styles.groupName}>{groupName}</span>
-                    </div>
-                  )}
+                  {/* Left: collapse toggle — always shown */}
+                  <button
+                    className={styles.groupHeader}
+                    onClick={() => toggleCollapse(groupName)}
+                  >
+                    {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                    <span className={styles.groupName}>{groupName}</span>
+                    <span className={styles.groupCount}>{models.length}</span>
+                  </button>
 
                   {/* Right: ▲ ▼ reorder buttons, appear on hover */}
                   <div className={styles.reorderBtns}>
@@ -125,11 +135,11 @@ export function Sidebar({
                   </div>
                 </div>
 
-                {(!isCollapsed || isSingle) &&
+                {!isCollapsed &&
                   models.map((p) => (
                     <button
                       key={p.id}
-                      className={`${styles.navItem} ${selectedId === p.id ? styles.active : ""} ${!isSingle ? styles.indented : ""}`}
+                      className={`${styles.navItem} ${selectedId === p.id ? styles.active : ""} ${styles.indented}`}
                       onClick={() => onSelect(p.id)}
                     >
                       <div className={styles.providerDot} />

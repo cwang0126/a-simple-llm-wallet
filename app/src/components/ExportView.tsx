@@ -9,14 +9,19 @@ interface Props {
   onBack: () => void;
 }
 
-type Mode = "prefixed" | "generic";
+type Mode = "prefixed" | "generic" | "custom";
 
 export function ExportView({ provider, onBack }: Props) {
   const [mode, setMode] = useState<Mode>("prefixed");
+  const [customPrefix, setCustomPrefix] = useState("");
   const [copied, setCopied] = useState(false);
   const group = getGroup(provider);
 
-  const content = mode === "prefixed" ? generatePrefixed(provider) : generateGeneric(provider);
+  const content = (() => {
+    if (mode === "generic") return generateGeneric(provider);
+    if (mode === "custom") return generateCustom(provider, customPrefix);
+    return generatePrefixed(provider);
+  })();
 
   const copy = async () => {
     await navigator.clipboard.writeText(content);
@@ -60,7 +65,26 @@ export function ExportView({ provider, onBack }: Props) {
           >
             Generic (OPENAI_*)
           </button>
+          <button
+            className={`${styles.modeBtn} ${mode === "custom" ? styles.active : ""}`}
+            onClick={() => setMode("custom")}
+          >
+            Custom prefix
+          </button>
         </div>
+
+        {mode === "custom" && (
+          <div className={styles.customPrefixRow}>
+            <input
+              className={styles.customPrefixInput}
+              value={customPrefix}
+              onChange={(e) => setCustomPrefix(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ""))}
+              placeholder="MY_PREFIX"
+              spellCheck={false}
+            />
+            <span className={styles.customPrefixHint}>_BASE_URL, _API_KEY, _MODEL…</span>
+          </div>
+        )}
 
         <div className={styles.codeBlock}>
           <div className={styles.codeActions}>
@@ -87,17 +111,7 @@ export function ExportView({ provider, onBack }: Props) {
 function generatePrefixed(p: Provider): string {
   const group = getGroup(p);
   const prefix = group.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-  const lines = [
-    `# LLM Wallet export — ${group} / ${p.modelName}`,
-    `# Generated at ${new Date().toISOString()}`,
-    ``,
-    `${prefix}_BASE_URL=${p.baseUrl}`,
-    `${prefix}_API_KEY=${p.apiKey}`,
-    `${prefix}_MODEL=${p.modelName}`,
-  ];
-  if (p.contextWindow) lines.push(`${prefix}_CONTEXT_WINDOW=${p.contextWindow}`);
-  if (p.modalities.length) lines.push(`${prefix}_MODALITIES=${p.modalities.join(",")}`);
-  return lines.join("\n") + "\n";
+  return buildEnv(p, prefix, `${group} / ${p.modelName}`);
 }
 
 function generateGeneric(p: Provider): string {
@@ -111,5 +125,24 @@ function generateGeneric(p: Provider): string {
     `OPENAI_MODEL=${p.modelName}`,
   ];
   if (p.contextWindow) lines.push(`OPENAI_CONTEXT_WINDOW=${p.contextWindow}`);
+  return lines.join("\n") + "\n";
+}
+
+function generateCustom(p: Provider, prefix: string): string {
+  const sanitized = prefix.trim() || "MY_PREFIX";
+  return buildEnv(p, sanitized, `${getGroup(p)} / ${p.modelName} (prefix: ${sanitized})`);
+}
+
+function buildEnv(p: Provider, prefix: string, label: string): string {
+  const lines = [
+    `# LLM Wallet export — ${label}`,
+    `# Generated at ${new Date().toISOString()}`,
+    ``,
+    `${prefix}_BASE_URL=${p.baseUrl}`,
+    `${prefix}_API_KEY=${p.apiKey}`,
+    `${prefix}_MODEL=${p.modelName}`,
+  ];
+  if (p.contextWindow) lines.push(`${prefix}_CONTEXT_WINDOW=${p.contextWindow}`);
+  if (p.modalities.length) lines.push(`${prefix}_MODALITIES=${p.modalities.join(",")}`);
   return lines.join("\n") + "\n";
 }
