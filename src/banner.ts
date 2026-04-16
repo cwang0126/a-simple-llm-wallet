@@ -1,4 +1,17 @@
 import chalk from "chalk";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+function getVersion(): string {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
+    return `v${pkg.version}`;
+  } catch {
+    return "";
+  }
+}
 
 // ─── Purple palette ───────────────────────────────────────────────────────────
 const p1 = (s: string) => chalk.hex("#9B59B6")(s);  // mid purple
@@ -41,7 +54,7 @@ export function printBanner(): void {
   }
 
   out.push("");
-  out.push(dm(`  local-first credential manager for LLM inference providers`) + `  ` + p3(`v0.2.0`));
+  out.push(dm(`  local-first credential manager for LLM inference providers`) + `  ` + p3(getVersion()));
   out.push(`  ` + dm(`wallet: `) + p2(`~/.llm-wallet/wallet.json`));
   out.push("");
 

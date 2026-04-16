@@ -296,6 +296,19 @@
 }
 .dropdownItem:hover { background: var(--bg-hover); }
 
+/* Known-provider picker items: stack name + URL vertically */
+.dropdownProviderItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  transition: background 0.1s;
+  gap: 2px;
+}
+.dropdownProviderItem:hover { background: var(--bg-hover); }
+
 /* Wrapper for item + optional expanded panel */
 .dropdownItemWrap {}
 
@@ -405,6 +418,15 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
+}
+
+.dropdownItemSub {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 @keyframes spin {

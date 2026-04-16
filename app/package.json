@@ -1,12 +1,13 @@
 {
   "name": "llm-wallet-desktop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "release": "tauri build && ./fix-dmg-layout.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

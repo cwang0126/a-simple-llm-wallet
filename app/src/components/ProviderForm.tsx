@@ -309,7 +309,7 @@ export function ProviderForm({ initial, onSave, onCancel }: Props) {
                     <button
                       key={kp.name}
                       type="button"
-                      className={styles.dropdownItem}
+                      className={styles.dropdownProviderItem}
                       onMouseDown={() => selectKnownProvider(kp)}
                     >
                       <span className={styles.dropdownItemName}>{kp.name}</span>
