@@ -1,6 +1,6 @@
 {
   "productName": "LLM Wallet",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "com.cwang0126.llm-wallet",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -28,6 +28,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": ["../../providers.json"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

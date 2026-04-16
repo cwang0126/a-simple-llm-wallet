@@ -55,8 +55,68 @@ fn wallet_path() -> PathBuf {
     wallet_dir().join("wallet.json")
 }
 
+fn providers_path() -> PathBuf {
+    wallet_dir().join("providers.json")
+}
+
 fn log_path() -> PathBuf {
     wallet_dir().join("log").join("connectivity.log")
+}
+
+/// On first run (or after an app update), copy the bundled providers.json to
+/// ~/.llm-wallet/providers.json.  If a file already exists there, back it up
+/// with a timestamp before overwriting so user customisations are never lost.
+fn ensure_providers_file(app: &tauri::App) {
+    // Locate the bundled providers.json via the Tauri resource resolver
+    let resource_path = app
+        .path()
+        .resource_dir()
+        .ok()
+        .map(|d| d.join("providers.json"));
+
+    let bundled_raw = resource_path
+        .as_ref()
+        .and_then(|p| fs::read_to_string(p).ok())
+        // Fallback: walk up from the executable (dev mode)
+        .or_else(|| {
+            std::env::current_exe().ok().and_then(|exe| {
+                let mut dir = exe.parent()?.to_path_buf();
+                for _ in 0..6 {
+                    let candidate = dir.join("providers.json");
+                    if candidate.exists() {
+                        return fs::read_to_string(candidate).ok();
+                    }
+                    dir = dir.parent()?.to_path_buf();
+                }
+                None
+            })
+        });
+
+    let bundled_raw = match bundled_raw {
+        Some(r) => r,
+        None => return, // nothing to copy
+    };
+
+    let dest = providers_path();
+
+    // Ensure the wallet directory exists
+    if let Some(parent) = dest.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+
+    if dest.exists() {
+        // Only overwrite if the bundled content differs from what's on disk
+        let existing = fs::read_to_string(&dest).unwrap_or_default();
+        if existing.trim() == bundled_raw.trim() {
+            return; // identical — nothing to do
+        }
+        // Back up the existing file with a timestamp
+        let ts = chrono::Utc::now().format("%Y%m%dT%H%M%S");
+        let backup = dest.with_file_name(format!("providers.{}.bak.json", ts));
+        let _ = fs::copy(&dest, &backup);
+    }
+
+    let _ = fs::write(&dest, &bundled_raw);
 }
 
 fn load_wallet() -> WalletData {
@@ -231,16 +291,31 @@ async fn fetch_models(
 }
 #[tauri::command]
 fn get_known_providers() -> Vec<serde_json::Value> {
-    // Try to read from the resource directory
+    // Primary: user-editable copy in ~/.llm-wallet/providers.json
+    let user_path = providers_path();
+    if user_path.exists() {
+        if let Ok(raw) = fs::read_to_string(&user_path) {
+            if let Ok(val) = serde_json::from_str::<Vec<serde_json::Value>>(&raw) {
+                return val;
+            }
+        }
+    }
+
+    // Fallback: walk up from the executable (dev mode / resource dir)
     let candidates = vec![
-        // Bundled resource path (production)
         std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|d| d.join("providers.json"))),
-        // Dev: repo root relative to executable
         std::env::current_exe()
             .ok()
-            .and_then(|p| p.parent().and_then(|d| d.parent()).and_then(|d| d.parent()).and_then(|d| d.parent()).and_then(|d| d.parent()).map(|d| d.join("providers.json"))),
+            .and_then(|p| {
+                p.parent()
+                    .and_then(|d| d.parent())
+                    .and_then(|d| d.parent())
+                    .and_then(|d| d.parent())
+                    .and_then(|d| d.parent())
+                    .map(|d| d.join("providers.json"))
+            }),
     ];
 
     for candidate in candidates.into_iter().flatten() {
@@ -253,6 +328,24 @@ fn get_known_providers() -> Vec<serde_json::Value> {
         }
     }
     vec![]
+}
+
+#[tauri::command]
+fn open_providers_file() -> Result<(), String> {
+    let path = providers_path();
+    if !path.exists() {
+        return Err("providers.json not found in ~/.llm-wallet".to_string());
+    }
+    Command::new("open")
+        .arg(path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn get_providers_path() -> String {
+    providers_path().to_string_lossy().to_string()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -269,9 +362,12 @@ pub fn run() {
             open_url,
             log_connectivity,
             get_known_providers,
+            open_providers_file,
+            get_providers_path,
             fetch_models,
         ])
         .setup(|app| {
+            ensure_providers_file(app);
             setup_tray(app)?;
             Ok(())
         })

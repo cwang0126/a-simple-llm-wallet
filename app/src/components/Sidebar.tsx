@@ -6,6 +6,7 @@ import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Provider, Theme, ViewMode } from "../types";
 import { getGroup, daysUntilExpiry } from "../types";
+import { openProvidersFile } from "../hooks/useProviders";
 import styles from "./Sidebar.module.css";
 
 interface Props {
@@ -182,6 +183,13 @@ export function Sidebar({
           >
             <FolderOpen size={13} />
             Open wallet.json
+          </button>
+          <button
+            className={styles.settingsItem}
+            onClick={() => { openProvidersFile(); setShowSettings(false); }}
+          >
+            <FolderOpen size={13} />
+            Open providers.json
           </button>
         </div>
       )}

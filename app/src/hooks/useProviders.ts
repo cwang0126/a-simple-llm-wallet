@@ -106,3 +106,7 @@ export async function logConnectivity(entry: string): Promise<void> {
 export async function openUrl(url: string): Promise<void> {
   await invoke("open_url", { url });
 }
+
+export async function openProvidersFile(): Promise<void> {
+  await invoke("open_providers_file");
+}

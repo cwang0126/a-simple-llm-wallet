@@ -1,6 +1,6 @@
 [package]
 name = "llm-wallet-desktop"
-version = "0.2.0"
+version = "0.2.1"
 description = "LLM Wallet Desktop"
 authors = ["cwang0126"]
 edition = "2021"
